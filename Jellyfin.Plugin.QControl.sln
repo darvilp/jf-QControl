@@ -12,6 +12,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jellyfin.Plugin.QControl.QB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jellyfin.Plugin.QControl.ActionContractProbe", "tests/Jellyfin.Plugin.QControl.ActionContractProbe/Jellyfin.Plugin.QControl.ActionContractProbe.csproj", "{F526292A-6AC9-491E-BC3D-DF8752FF00FD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jellyfin.Plugin.QControl.AlternativeLimitsContractProbe", "tests/Jellyfin.Plugin.QControl.AlternativeLimitsContractProbe/Jellyfin.Plugin.QControl.AlternativeLimitsContractProbe.csproj", "{BD8B92E7-70AE-49CB-AB92-3995B62095A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,5 +40,9 @@ Global
 		{F526292A-6AC9-491E-BC3D-DF8752FF00FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F526292A-6AC9-491E-BC3D-DF8752FF00FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F526292A-6AC9-491E-BC3D-DF8752FF00FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD8B92E7-70AE-49CB-AB92-3995B62095A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD8B92E7-70AE-49CB-AB92-3995B62095A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD8B92E7-70AE-49CB-AB92-3995B62095A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD8B92E7-70AE-49CB-AB92-3995B62095A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

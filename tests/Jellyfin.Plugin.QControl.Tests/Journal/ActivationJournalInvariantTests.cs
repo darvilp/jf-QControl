@@ -69,6 +69,42 @@ public sealed class ActivationJournalInvariantTests
     }
 
     [Fact]
+    public async Task OwnedAlternativeLimitsCanPersistAReenableIntent()
+    {
+        var journal = JournalTestData.Create(ProcessInstanceId) with
+        {
+            AlternativeLimits = new AlternativeLimitsJournalState(
+                InitialEnabled: false,
+                EnabledByActivation: true,
+                EnableStage: JournalMutationStage.IntentPersisted,
+                DisableStage: JournalMutationStage.None),
+        };
+        var fileSystem = new RawFileSystem();
+        var store = new ActivationJournalStore(JournalPath, fileSystem);
+
+        await store.WriteAsync(journal, CancellationToken.None).ConfigureAwait(true);
+
+        Assert.NotNull(fileSystem.FinalContent);
+    }
+
+    [Fact]
+    public async Task ConfirmedInitialEnableCannotRemainUnowned()
+    {
+        var journal = JournalTestData.Create(ProcessInstanceId) with
+        {
+            AlternativeLimits = new AlternativeLimitsJournalState(
+                InitialEnabled: false,
+                EnabledByActivation: false,
+                EnableStage: JournalMutationStage.Confirmed,
+                DisableStage: JournalMutationStage.None),
+        };
+        var store = new ActivationJournalStore(JournalPath, new RawFileSystem());
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => store.WriteAsync(journal, CancellationToken.None).AsTask()).ConfigureAwait(true);
+    }
+
+    [Fact]
     public async Task UndefinedMutationStageInSerializedVersionOneIsCorrupt()
     {
         var fileSystem = new RawFileSystem();

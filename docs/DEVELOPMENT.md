@@ -12,6 +12,7 @@ scripts/dotnet.sh test Jellyfin.Plugin.QControl.sln --configuration Release --no
 tests/packaging/package-contract.test.sh
 tests/fixtures/qbittorrent-client-contract.test.sh
 tests/fixtures/qbittorrent-action-contract.test.sh
+tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
 ```
 
 Run the complete repository-skeleton and compatibility gate with:
@@ -46,6 +47,19 @@ serialized Stop Torrents service against the six real qBittorrent fixtures. It
 protects every initially running non-excluded hash, proves already-stopped and
 Never-touch fixtures remain untouched, restores only marked hashes, and then
 returns the fixture to its initial stopped/running shape.
+
+Run both production protection actions, including real Alternative Limits
+ownership, with:
+
+```bash
+scripts/test-issue-006.sh
+```
+
+The Alternative Limits contract starts from disabled, proves enable ownership,
+reasserts the mode after a simulated scheduler/administrator disable, and
+disables it on same-process restoration. It then starts from enabled and proves
+the action remains unowned and leaves the mode enabled on restoration. The
+fixture restores the pre-test mode in all exit paths.
 
 ## Prerequisites
 

@@ -3,9 +3,9 @@
 Status: **passed on 2026-08-14**
 
 This report began as the Issue 001 compatibility spike and now also records the
-production qBittorrent client, physical journal, and Stop Torrents vertical
-slice evidence completed through Issue 005. Jellyfin playback coordination and
-Alternative Limits orchestration remain later slices.
+production qBittorrent client, physical journal, Stop Torrents, and Alternative
+Limits vertical-slice evidence completed through Issue 006. Jellyfin playback
+coordination remains a later slice.
 
 ## Pinned environment
 
@@ -108,6 +108,14 @@ the marker. The completed-stopped, incomplete-stopped, and Never-touch
 preconditions were checked after both protection and restoration; none were
 cycled merely to defeat qBittorrent queueing.
 
+Issue 006 ran the production Alternative Limits service against the same
+qBittorrent setter and physical journal. Starting from disabled, it persisted
+intent before enabling, claimed ownership only after read-back, re-enabled the
+mode after a deliberate mid-protection disable, and disabled the owned
+transition on same-process restoration. Starting from enabled, it recorded an
+unowned initial state and left the mode enabled on restoration. The fixture
+restored the mode that existed before the probe.
+
 ## Stable torrent states
 
 | Fixture | Observed qBittorrent state | Progress |
@@ -152,6 +160,7 @@ tests/fixtures/qbittorrent-compatibility.test.sh
 tests/fixtures/qbittorrent-mutations.test.sh
 tests/fixtures/qbittorrent-client-contract.test.sh
 tests/fixtures/qbittorrent-action-contract.test.sh
+tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
 tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
 ```

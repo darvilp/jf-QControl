@@ -364,10 +364,13 @@ public sealed class ActivationJournalStore : IActivationJournalStore
         }
 
         if (!state.InitialEnabled.Value
-            && state.EnabledByActivation != (state.EnableStage == JournalMutationStage.Confirmed))
+            && ((!state.EnabledByActivation
+                    && state.EnableStage == JournalMutationStage.Confirmed)
+                || (state.EnabledByActivation
+                    && state.EnableStage == JournalMutationStage.None)))
         {
             throw new ArgumentException(
-                "Alternative Limits ownership requires a confirmed disabled-to-enabled transition.",
+                "Alternative Limits ownership and enable progress are inconsistent.",
                 nameof(document));
         }
 
