@@ -1,0 +1,100 @@
+name: qcontrol-test
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.11@sha256:aefb67e6a7ff1debdd154a78a7bbb780fd0c873d8639210a7f6a2016ad2b35db
+    container_name: qcontrol-test-jellyfin
+    user: "${QCONTROL_UID:-1000}:${QCONTROL_GID:-1000}"
+    init: true
+    environment:
+      JELLYFIN_PublishedServerUrl: http://127.0.0.1:18196
+    volumes:
+      - ./.testenv/jellyfin/config:/config
+      - ./.testenv/jellyfin/cache:/cache
+      - ./.testenv/jellyfin/media:/media:ro
+      - ./.testenv/secrets/qbittorrent-api-key:/run/secrets/qbittorrent-api-key:ro
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8096/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    stop_grace_period: 30s
+    labels:
+      io.qcontrol.fixture: "true"
+    networks:
+      testnet:
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:5.2.3@sha256:6816d2b144b1eb97665f886e41e18a14d026ba78c9d0953fc68a1211ea819433
+    container_name: qcontrol-test-qbittorrent
+    environment:
+      PUID: "${QCONTROL_UID:-1000}"
+      PGID: "${QCONTROL_GID:-1000}"
+      TZ: Etc/UTC
+      WEBUI_PORT: "18180"
+      TORRENTING_PORT: "16881"
+    volumes:
+      - ./.testenv/qbittorrent/config:/config
+      - ./.testenv/qbittorrent/downloads:/downloads
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:18180/ >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    stop_grace_period: 30s
+    labels:
+      io.qcontrol.fixture: "true"
+    networks:
+      testnet:
+
+  webseed:
+    image: nginx:1.28.0-alpine@sha256:30f1c0d78e0ad60901648be663a710bdadf19e4c10ac6782c235200619158284
+    container_name: qcontrol-test-webseed
+    volumes:
+      - ./.testenv/qbittorrent-fixtures/webseed:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:80/complete-seeding.bin"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    labels:
+      io.qcontrol.fixture: "true"
+    networks:
+      testnet:
+
+  gateway:
+    image: nginx:1.28.0-alpine@sha256:30f1c0d78e0ad60901648be663a710bdadf19e4c10ac6782c235200619158284
+    container_name: qcontrol-test-gateway
+    depends_on:
+      jellyfin:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18196:18196"
+      - "127.0.0.1:18180:18180"
+    volumes:
+      - ./tests/fixtures/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:18180/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    labels:
+      io.qcontrol.fixture: "true"
+    networks:
+      testnet:
+      controlnet:
+
+networks:
+  testnet:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.31.253.0/24
+  controlnet:
+    ipam:
+      config:
+        - subnet: 172.31.254.0/24

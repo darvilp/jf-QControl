@@ -1,8 +1,26 @@
 # Local development
 
-QControl has no production code yet. Issue 001 will add exact restore, build,
-test, package, and environment commands after they are proven from a clean
-checkout.
+QControl targets .NET 9 and Jellyfin 10.11.11. The repository-local wrapper
+keeps disposable .NET and NuGet state below ignored `.testenv/` paths.
+
+## Build and test
+
+```bash
+scripts/dotnet.sh restore Jellyfin.Plugin.QControl.sln
+scripts/dotnet.sh build Jellyfin.Plugin.QControl.sln --configuration Release --no-restore
+scripts/dotnet.sh test Jellyfin.Plugin.QControl.sln --configuration Release --no-build --no-restore
+tests/packaging/package-contract.test.sh
+```
+
+Run the complete repository-skeleton and compatibility gate with:
+
+```bash
+scripts/test-issue-001.sh
+```
+
+That gate runs shell lint, .NET tests, package verification, static fixture
+checks, the teardown ownership proof, real qBittorrent state/mutation probes,
+real Jellyfin session snapshots, and packaged-plugin installation.
 
 ## Prerequisites
 
@@ -30,26 +48,26 @@ The test environment follows the established `jf-TagSync` conventions:
 - teardown scoped to the Compose project;
 - no public tracker, DHT, PeX, LPD, UPnP, or operator-service dependency.
 
-## Planned Compose topology
+## Compose topology
 
 ```text
-Jellyfin 10.11
-      │ qBittorrent Web API
-      ▼
-qBittorrent 5.2 under test
-      │
-      ├── isolated config/download volumes
-      ├── local throttled HTTP web seed
-      └── optional local peer fixture
+loopback 18196/18180
+          │
+          ▼
+HTTP-only gateway
+          │ internal network
+          ├── Jellyfin 10.11.11
+          ├── qBittorrent 5.2.3
+          └── local HTTP web seed
 ```
 
-The qBittorrent image will be pinned by version and digest after Issue 001
-proves the packaged application and Web API versions. `latest` is not an
-accepted CI dependency.
+All three images are pinned by version and registry digest in `compose.yaml`.
+`latest` is not an accepted dependency.
 
-The WebUI is reachable from Jellyfin as `http://qbittorrent:8080` and may be
-published on a loopback-only high port for diagnostics. No BitTorrent listening
-port is published to the host.
+The WebUI is reachable from Jellyfin as `http://qbittorrent:18180` and from the
+host as `http://127.0.0.1:18180`. Jellyfin is exposed at
+`http://127.0.0.1:18196`. The gateway forwards only HTTP; no BitTorrent
+listening port is published or routed.
 
 ## API-key bootstrap
 
@@ -58,8 +76,9 @@ to initialize qBittorrent, but QControl itself never receives those values.
 
 Bootstrap flow:
 
-1. Start qBittorrent with isolated fixture configuration.
-2. Log in through the Web API from the fixture harness.
+1. Start qBittorrent with isolated fixture configuration and the WebUI on port
+   `18180` both inside and outside the service boundary.
+2. Log in with either the fixture password or the one-time startup password.
 3. Rotate/generate one ephemeral qBittorrent API key.
 4. Write it to a Compose-only secret file.
 5. Mount that file read-only into Jellyfin.
@@ -84,8 +103,7 @@ Stable real-container fixtures include:
 | Incomplete/stalled | Payload absent; no tracker, peer, or web seed |
 | Incomplete/downloading | Payload absent; local throttled web seed available |
 | Incomplete/queued | Active-download limit plus several local web-seed torrents |
-| Completed/queued | Active-seed limit plus several completed torrents |
-| Category scope | Assign `sonarr`, `radarr`, `manual`, or no category |
+| Category scope | Assign `sonarr` and `radarr`; compatibility probes also round-trip spaces and non-ASCII names |
 | Marker/exclusion | Assign configured Marker or Never-touch Tags |
 
 The suite polls qBittorrent with bounded deadlines and asserts each fixture's
@@ -101,8 +119,9 @@ the real playback-reporting endpoints to produce playing, paused, overlapping,
 and stopped session state. This exercises real `ISessionManager` events and
 snapshots without performing a transcode in every test.
 
-At least one browser/client smoke uses a small generated local media file to
-prove the complete player-to-plugin path.
+A browser/client smoke remains part of the alpha hardening issue. Issue 001
+proves the same server-side session shapes through authenticated playback
+reports and a generated four-second media file.
 
 ## Safety
 

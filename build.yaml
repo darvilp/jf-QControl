@@ -1,0 +1,16 @@
+---
+name: "QControl"
+guid: "ab18c878-1856-4853-8f21-5028a1d5a7b2"
+version: "0.1.0.0"
+targetAbi: "10.11.11.0"
+framework: "net9.0"
+owner: "darvilp"
+overview: "Reduce qBittorrent activity while Jellyfin playback is present."
+description: >
+  QControl coordinates Jellyfin playback presence with temporary qBittorrent
+  Alternative Limits or explicit torrent stops.
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.QControl.dll"
+changelog: >
+  Initial development package with a loadable Jellyfin 10.11 plugin skeleton.

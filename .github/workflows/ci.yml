@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Jellyfin.Plugin.QControl.sln
+
+      - name: Build
+        run: dotnet build Jellyfin.Plugin.QControl.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Jellyfin.Plugin.QControl.sln --configuration Release --no-build --no-restore --verbosity normal
+
+      - name: Lint fixture tooling
+        run: shellcheck scripts/*.sh tests/fixtures/*.sh tests/packaging/*.sh
+
+      - name: Verify static fixture contract
+        run: tests/fixtures/environment-contract.test.sh
+
+  package:
+    name: Build JPRM package
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Build plugin package
+        id: package
+        uses: oddstr13/jellyfin-plugin-repository-manager@9497a0a499416cc572ed2e07a391d9f943a37b4d # v1.1.1
+        with:
+          dotnet-target: net9.0
+
+      - name: Verify package contents
+        run: ./scripts/verify-package.sh "${{ steps.package.outputs.artifact }}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: qcontrol-package
+          if-no-files-found: error
+          retention-days: 14
+          path: ${{ steps.package.outputs.artifact }}

@@ -1,12 +1,13 @@
 # QControl
 
-QControl is a planned Jellyfin server plugin that reduces qBittorrent activity
+QControl is a Jellyfin server plugin under active alpha development that reduces qBittorrent activity
 while Jellyfin media is open in a player. It can independently enable
 qBittorrent Alternative Limits and stop administrator-selected torrents, then
 restore the controlled state after a configurable grace period.
 
-The project is currently in its design and test-planning phase. It contains no
-production plugin code yet.
+The repository currently contains the loadable Jellyfin 10.11 plugin skeleton,
+package tooling, and isolated Jellyfin/qBittorrent compatibility fixtures. The
+protection behavior and administrator configuration are still being implemented.
 
 ## V1 direction
 
@@ -33,9 +34,21 @@ production plugin code yet.
 - [TDD implementation plan](docs/PLAN.md)
 - [Issue specifications](docs/issues/)
 - [Research and references](docs/research/first-pass.md)
+- [Jellyfin 10.11.11 / qBittorrent 5.2.3 compatibility evidence](docs/compatibility/jellyfin-10.11.11-qbittorrent-5.2.3.md)
+
+## Development quick start
+
+```bash
+scripts/dotnet.sh restore Jellyfin.Plugin.QControl.sln
+scripts/dotnet.sh test Jellyfin.Plugin.QControl.sln --configuration Release
+tests/packaging/package-contract.test.sh
+scripts/test-issue-001.sh
+```
+
+The last command runs the Docker compatibility suite and uses only the
+project-owned state below `.testenv/`. QControl uses loopback ports `18196` and
+`18180`, so the TagSync fixture can remain running on `18096`.
 
 ## License
 
-The public plugin will use GPL-3.0-compatible licensing in line with the
-Jellyfin plugin ecosystem. The license file will be added with the repository
-skeleton before production code begins.
+QControl is licensed under GPL-3.0.
