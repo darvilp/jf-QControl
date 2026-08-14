@@ -322,7 +322,11 @@ public sealed class ActivationJournalStore : IActivationJournalStore
     private static void ValidateAlternativeLimits(ActivationJournalDocument document)
     {
         var state = document.AlternativeLimits;
-        if (!Enum.IsDefined(state.EnableStage) || !Enum.IsDefined(state.DisableStage))
+        if (!Enum.IsDefined(state.EnableStage)
+            || !Enum.IsDefined(state.DisableStage)
+            || !Enum.IsDefined(state.ManualRestoreStage)
+            || (state.ManualRestoreStage == JournalMutationStage.None)
+                != !state.ManualRestoreTarget.HasValue)
         {
             throw new ArgumentException("Alternative Limits progress is undefined.", nameof(document));
         }
@@ -332,7 +336,8 @@ public sealed class ActivationJournalStore : IActivationJournalStore
             if (state.InitialEnabled.HasValue
                 || state.EnabledByActivation
                 || state.EnableStage != JournalMutationStage.None
-                || state.DisableStage != JournalMutationStage.None)
+                || state.DisableStage != JournalMutationStage.None
+                || state.ManualRestoreStage != JournalMutationStage.None)
             {
                 throw new ArgumentException(
                     "Alternative Limits progress exists for a disabled action.",
@@ -346,7 +351,8 @@ public sealed class ActivationJournalStore : IActivationJournalStore
         {
             if (state.EnabledByActivation
                 || state.EnableStage != JournalMutationStage.None
-                || state.DisableStage != JournalMutationStage.None)
+                || state.DisableStage != JournalMutationStage.None
+                || state.ManualRestoreStage != JournalMutationStage.None)
             {
                 throw new ArgumentException(
                     "Unobserved Alternative Limits cannot carry mutation progress.",
@@ -360,6 +366,14 @@ public sealed class ActivationJournalStore : IActivationJournalStore
         {
             throw new ArgumentException(
                 "An initially enabled Alternative Limits mode cannot be activation-owned.",
+                nameof(document));
+        }
+
+        if (state.ManualRestoreTarget.HasValue
+            && state.ManualRestoreTarget != state.InitialEnabled)
+        {
+            throw new ArgumentException(
+                "Explicit Alternative Limits recovery must target the observed prior state.",
                 nameof(document));
         }
 

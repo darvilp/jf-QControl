@@ -23,7 +23,7 @@ public sealed class ProtectionCoordinatorWorkerTests
         await coordinator.WaitForCallsAsync(1);
         var firstDelay = await delay.NextAsync();
 
-        Assert.Equal(TimeSpan.FromSeconds(10), firstDelay.Duration);
+        Assert.Equal(TimeSpan.FromSeconds(5), firstDelay.Duration);
 
         firstDelay.Complete();
         await coordinator.WaitForCallsAsync(2);

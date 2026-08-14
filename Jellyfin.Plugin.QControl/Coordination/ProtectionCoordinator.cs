@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,10 @@ namespace Jellyfin.Plugin.QControl.Coordination;
 /// <summary>
 /// Serializes session truth, lifecycle timing, journal state, and protection actions.
 /// </summary>
-public sealed class ProtectionCoordinator : IProtectionCoordinator, IDisposable
+public sealed class ProtectionCoordinator :
+    IProtectionCoordinator,
+    IProtectionCoordinatorStateControl,
+    IDisposable
 {
     private readonly IPlaybackSessionSource _sessionSource;
     private readonly IActivationJournalFactory _journalFactory;
@@ -21,7 +25,8 @@ public sealed class ProtectionCoordinator : IProtectionCoordinator, IDisposable
     private readonly IActivationJournalStore _journalStore;
     private readonly TimeProvider _timeProvider;
     private readonly Guid _processInstanceId;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly IProtectionExecutionGate _executionGate;
+    private readonly bool _ownsExecutionGate;
     private bool _loaded;
     private bool _recoveryRequired;
     private ActivationJournalAuthority _authority;
@@ -36,6 +41,10 @@ public sealed class ProtectionCoordinator : IProtectionCoordinator, IDisposable
     /// <param name="journalStore">The durable activation state boundary.</param>
     /// <param name="timeProvider">The explicit lifecycle clock.</param>
     /// <param name="processInstanceId">The uninterrupted process identity.</param>
+    [SuppressMessage(
+        "Reliability",
+        "CA2000:Dispose objects before losing scope",
+        Justification = "The compatibility constructor transfers gate ownership to this coordinator.")]
     public ProtectionCoordinator(
         IPlaybackSessionSource sessionSource,
         IActivationJournalFactory journalFactory,
@@ -43,12 +52,65 @@ public sealed class ProtectionCoordinator : IProtectionCoordinator, IDisposable
         IActivationJournalStore journalStore,
         TimeProvider timeProvider,
         Guid processInstanceId)
+        : this(
+            sessionSource,
+            journalFactory,
+            actions,
+            journalStore,
+            timeProvider,
+            processInstanceId,
+            new ProtectionExecutionGate(),
+            ownsExecutionGate: true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProtectionCoordinator"/> class
+    /// sharing the process-wide mutation gate with recovery.
+    /// </summary>
+    /// <param name="sessionSource">The authoritative neutral playback source.</param>
+    /// <param name="journalFactory">The new-activation configuration snapshot factory.</param>
+    /// <param name="actions">The complete independent protection action set.</param>
+    /// <param name="journalStore">The durable activation state boundary.</param>
+    /// <param name="timeProvider">The explicit lifecycle clock.</param>
+    /// <param name="processInstanceId">The uninterrupted process identity.</param>
+    /// <param name="executionGate">The shared automatic/manual mutation gate.</param>
+    public ProtectionCoordinator(
+        IPlaybackSessionSource sessionSource,
+        IActivationJournalFactory journalFactory,
+        IProtectionActionSet actions,
+        IActivationJournalStore journalStore,
+        TimeProvider timeProvider,
+        Guid processInstanceId,
+        IProtectionExecutionGate executionGate)
+        : this(
+            sessionSource,
+            journalFactory,
+            actions,
+            journalStore,
+            timeProvider,
+            processInstanceId,
+            executionGate,
+            ownsExecutionGate: false)
+    {
+    }
+
+    private ProtectionCoordinator(
+        IPlaybackSessionSource sessionSource,
+        IActivationJournalFactory journalFactory,
+        IProtectionActionSet actions,
+        IActivationJournalStore journalStore,
+        TimeProvider timeProvider,
+        Guid processInstanceId,
+        IProtectionExecutionGate executionGate,
+        bool ownsExecutionGate)
     {
         ArgumentNullException.ThrowIfNull(sessionSource);
         ArgumentNullException.ThrowIfNull(journalFactory);
         ArgumentNullException.ThrowIfNull(actions);
         ArgumentNullException.ThrowIfNull(journalStore);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        ArgumentNullException.ThrowIfNull(executionGate);
         if (processInstanceId == Guid.Empty)
         {
             throw new ArgumentException("A process identity is required.", nameof(processInstanceId));
@@ -60,6 +122,8 @@ public sealed class ProtectionCoordinator : IProtectionCoordinator, IDisposable
         _journalStore = journalStore;
         _timeProvider = timeProvider;
         _processInstanceId = processInstanceId;
+        _executionGate = executionGate;
+        _ownsExecutionGate = ownsExecutionGate;
     }
 
     /// <summary>
@@ -70,57 +134,70 @@ public sealed class ProtectionCoordinator : IProtectionCoordinator, IDisposable
     public async Task<ProtectionCoordinatorSnapshot> ReconcileAsync(
         CancellationToken cancellationToken)
     {
-        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
-            var sessions = await _sessionSource.ReadAsync(cancellationToken).ConfigureAwait(false);
-            var presence = PlaybackPresence.Evaluate(sessions);
-            var now = _timeProvider.GetUtcNow();
+        return await _executionGate
+            .ExecuteAsync(ReconcileCoreAsync, cancellationToken)
+            .ConfigureAwait(false);
+    }
 
-            if (_journal is null)
-            {
-                if (_recoveryRequired || !presence.IsPresent)
-                {
-                    return Snapshot();
-                }
-
-                var created = _journalFactory.Create(presence, _processInstanceId, now);
-                if (created is null)
-                {
-                    return Snapshot();
-                }
-
-                await _journalStore.WriteAsync(created, cancellationToken).ConfigureAwait(false);
-                _journal = created;
-                _authority = ActivationJournalAuthority.Full;
-            }
-
-            if (_authority == ActivationJournalAuthority.ProtectOnly)
-            {
-                if (presence.IsPresent)
-                {
-                    await ContinueInterruptedProtectionAsync(presence, now, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-
-                return Snapshot();
-            }
-
-            return await ReconcileOwnedActivationAsync(presence, now, cancellationToken)
-                .ConfigureAwait(false);
-        }
-        finally
-        {
-            _gate.Release();
-        }
+    /// <inheritdoc />
+    public void InvalidateJournalCache()
+    {
+        _loaded = false;
+        _recoveryRequired = false;
+        _authority = ActivationJournalAuthority.None;
+        _journal = null;
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
-        _gate.Dispose();
+        if (_ownsExecutionGate && _executionGate is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+
         GC.SuppressFinalize(this);
+    }
+
+    private async Task<ProtectionCoordinatorSnapshot> ReconcileCoreAsync(
+        CancellationToken cancellationToken)
+    {
+        await EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+        var sessions = await _sessionSource.ReadAsync(cancellationToken).ConfigureAwait(false);
+        var presence = PlaybackPresence.Evaluate(sessions);
+        var now = _timeProvider.GetUtcNow();
+
+        if (_journal is null)
+        {
+            if (_recoveryRequired || !presence.IsPresent)
+            {
+                return Snapshot();
+            }
+
+            var created = _journalFactory.Create(presence, _processInstanceId, now);
+            if (created is null)
+            {
+                return Snapshot();
+            }
+
+            await _journalStore.WriteAsync(created, cancellationToken).ConfigureAwait(false);
+            _journal = created;
+            _authority = ActivationJournalAuthority.Full;
+        }
+
+        if (_authority == ActivationJournalAuthority.ProtectOnly)
+        {
+            if (presence.IsPresent)
+            {
+                await ContinueInterruptedProtectionAsync(presence, now, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            return Snapshot();
+        }
+
+        return await ReconcileOwnedActivationAsync(presence, now, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task EnsureLoadedAsync(CancellationToken cancellationToken)

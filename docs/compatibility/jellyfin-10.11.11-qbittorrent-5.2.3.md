@@ -5,7 +5,7 @@ Status: **passed on 2026-08-14**
 This report began as the Issue 001 compatibility spike and now also records the
 production qBittorrent client, physical journal, Stop Torrents, Alternative
 Limits, and hosted Jellyfin playback coordination evidence completed through
-Issue 007.
+Issue 008.
 
 ## Pinned environment
 
@@ -41,8 +41,9 @@ The JPRM package initially contained only `Jellyfin.Plugin.QControl.dll` and
 `Jellyfin.Plugin.QControl.Domain.dll`; package contract tests require exactly
 those two assemblies and `meta.json`.
 Jellyfin logged `Loaded plugin: QControl 0.1.0.0`, returned it as `Active` from
-`GET /Plugins`, returned schema version 1 from its configuration endpoint, and
-served `Jellyfin.Plugin.QControl.Configuration.configPage.html` through
+`GET /Plugins`, retained revisioned inert configuration through QControl's
+validated administrator endpoint and a server restart, and served
+`Jellyfin.Plugin.QControl.Configuration.configPage.html` through
 `/web/ConfigurationPage?name=QControl`.
 
 The runtime configuration path was:
@@ -85,6 +86,25 @@ aggregation, paused protection, grace cancellation, exact-boundary release,
 serialization, retry, and cancellation-bounded shutdown. The unconfigured
 runtime created no activation journal during the real event sequence, as
 required for a new inert installation.
+
+Issue 008 proved every custom endpoint requires Jellyfin elevation: an
+unauthenticated configuration read returned `401`, and a normal authenticated
+user received `403` from configuration, status, connection testing, category
+discovery, and all three recovery commands. An administrator used the mounted
+secret-file credential to test qBittorrent `5.2.3` / Web API `2.15.1`, discover
+`radarr` and `sonarr`, and accept configuration revision 1. Neither the safe
+configuration response nor the activation journal contained API-key content.
+
+A paused authenticated player then activated Alternative Limits and Stop
+Torrents through the packaged hosted plugin. Status reported one qualifying
+session, connected qBittorrent, both actions, and the protecting lifecycle.
+After the stop report and the configured one-second grace, the plugin restored
+the initial speed mode, started and unmarked only its explicit selected hashes,
+preserved all torrent categories, deleted the journal, and reported inactive.
+The fixture then added the configured Marker Tag to an already-stopped torrent
+with no journal present. Status exposed explicit marked recovery; the recovery
+endpoint started and read-back-confirmed that hash, removed its Marker Tag,
+preserved its category, and deleted its temporary manual-recovery journal.
 
 ## qBittorrent authentication and reads
 
@@ -171,7 +191,8 @@ tests/fixtures/qbittorrent-action-contract.test.sh
 tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
 tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
-scripts/test-issue-007.sh
+tests/fixtures/jellyfin-qcontrol-contract.test.sh
+scripts/test-issue-008.sh
 ```
 
 `scripts/test-issue-001.sh` runs these together with restore, build, unit tests,
@@ -184,10 +205,9 @@ shell lint, and package verification.
   and replacement failures, and resolved the same sibling path shape already
   retained by the Jellyfin container restart fixture. Issue 005 then exercised
   that store at every Stop Torrents mutation boundary against the real fixture.
-- Issue 008 replaces the deliberately inert runtime factory/action set with a
-  validated configuration snapshot and exposes privacy-safe status and explicit
-  recovery operations. Issue 007 already owns event subscription, scheduling,
-  lifecycle aggregation, and top-level action serialization.
+- Issue 009 adds the administrator dashboard over the validated server API.
+  Issue 008 already owns revisioned configuration, active snapshots,
+  privacy-safe status, and explicit recovery commands.
 - The credential source uses platform-native .NET file APIs without Unix path
   parsing, but a native Windows secret-file smoke cannot be claimed from this
   Linux host. The Windows alpha procedure must verify a Jellyfin-service-readable,

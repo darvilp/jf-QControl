@@ -96,6 +96,8 @@ Cover:
 - plugin configuration serialization;
 - runtime plugin-configuration path resolution;
 - administrator authorization on custom endpoints;
+- revisioned validated configuration and connection/category discovery;
+- privacy-safe status and explicit recovery command contracts;
 - embedded configuration-page discovery.
 
 ### 2.6 Container integration tests
@@ -125,6 +127,12 @@ not establish status.
 
 The integration suite proves behavior across both real APIs; it does not use or
 modify an administrator's existing Jellyfin or qBittorrent installation.
+
+The packaged Issue 008 vertical slice enables both actions through the
+administrator API and proves one paused-session activation through normal
+release. It checks every selected torrent by explicit hash, the live status
+shape, journal secret containment, and restoration of the initial Alternative
+Limits mode, torrent states, Marker Tags, and categories.
 
 ### 2.7 Release smoke tests
 

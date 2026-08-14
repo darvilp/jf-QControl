@@ -42,7 +42,7 @@ public sealed class PluginServiceRegistratorTests
         Assert.Single(hostedServices.OfType<JellyfinPlaybackEventObserver>());
         Assert.IsType<JellyfinPlaybackSessionSource>(
             provider.GetRequiredService<IPlaybackSessionSource>());
-        Assert.IsType<UnconfiguredActivationJournalFactory>(
+        Assert.IsType<ConfiguredActivationJournalFactory>(
             provider.GetRequiredService<IActivationJournalFactory>());
     }
 }

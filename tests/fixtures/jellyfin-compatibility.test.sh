@@ -27,6 +27,7 @@ cleanup() {
     "${environment_script}" down >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
+trap 'printf "Jellyfin compatibility contract failed at line %s.\n" "${LINENO}" >&2' ERR
 
 for required_script in "${configure_script}" "${install_script}"; do
     if [[ ! -x "${required_script}" ]]; then
@@ -52,16 +53,23 @@ jq --exit-status \
 
 configuration="$(curl --fail --silent \
     --header "X-Emby-Token: ${access_token}" \
-    "${server_url}/Plugins/${plugin_id}/Configuration")"
-jq --exit-status '(.SchemaVersion // .schemaVersion) == 1' <<<"${configuration}" >/dev/null
+    "${server_url}/QControl/Configuration")"
+jq --exit-status \
+    '(.Revision // .revision) == 0
+     and (.AlternativeLimitsEnabled == false or .alternativeLimitsEnabled == false)
+     and (.StopTorrentsEnabled == false or .stopTorrentsEnabled == false)' \
+    <<<"${configuration}" >/dev/null
 
-curl --fail --silent --show-error \
-    --output /dev/null \
-    --request POST \
+save_result="$(curl --fail --silent --show-error \
+    --request PUT \
     --header "X-Emby-Token: ${access_token}" \
     --header 'Content-Type: application/json' \
-    --data '{"SchemaVersion":1}' \
-    "${server_url}/Plugins/${plugin_id}/Configuration"
+    --data '{"ExpectedRevision":0}' \
+    "${server_url}/QControl/Configuration")"
+jq --exit-status \
+    '((.Outcome // .outcome) | ascii_downcase) == "accepted"
+     and ((.Configuration // .configuration).Revision // (.Configuration // .configuration).revision) == 1' \
+    <<<"${save_result}" >/dev/null
 configuration_root="${project_root}/.testenv/jellyfin/config/plugins/configurations"
 configuration_path="${configuration_root}/Jellyfin.Plugin.QControl.xml"
 journal_path="${configuration_root}/Jellyfin.Plugin.QControl.journal.json"
@@ -93,8 +101,12 @@ find "${configuration_root}" \
 
 configuration="$(curl --fail --silent \
     --header "X-Emby-Token: ${access_token}" \
-    "${server_url}/Plugins/${plugin_id}/Configuration")"
-jq --exit-status '(.SchemaVersion // .schemaVersion) == 1' <<<"${configuration}" >/dev/null
+    "${server_url}/QControl/Configuration")"
+jq --exit-status \
+    '(.Revision // .revision) == 1
+     and (.AlternativeLimitsEnabled == false or .alternativeLimitsEnabled == false)
+     and (.StopTorrentsEnabled == false or .stopTorrentsEnabled == false)' \
+    <<<"${configuration}" >/dev/null
 
 page="$(curl --fail --silent --get \
     --header "X-Emby-Token: ${access_token}" \

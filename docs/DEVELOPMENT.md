@@ -13,6 +13,7 @@ tests/packaging/package-contract.test.sh
 tests/fixtures/qbittorrent-client-contract.test.sh
 tests/fixtures/qbittorrent-action-contract.test.sh
 tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
+tests/fixtures/jellyfin-qcontrol-contract.test.sh
 ```
 
 Run the complete repository-skeleton and compatibility gate with:
@@ -71,8 +72,22 @@ This adds neutral `ISessionManager` projection, non-blocking coalesced event
 wakes, startup and periodic reconciliation, exact release-grace scheduling,
 serialized action passes, retry, and cancellation-bounded shutdown. The real
 Jellyfin session fixture installs the package before sending playing, paused,
-overlapping, stopped, and logout reports. The runtime remains inert until Issue
-008 provides a validated enabled configuration.
+overlapping, stopped, and logout reports. An unconfigured runtime remains
+inert.
+
+Run the complete administrator server-contract slice with:
+
+```bash
+scripts/test-issue-008.sh
+```
+
+Its packaged-plugin fixture proves unauthenticated and regular users cannot use
+the administrator APIs, validates secret-file qBittorrent access, discovers
+categories, saves one revisioned enabled configuration, and treats a paused
+player as playback presence. It then confirms both actions through the real
+qBittorrent API, inspects privacy-safe live status and journal content, ends
+playback, and proves grace-based speed, tag, stopped-state, and category
+restoration.
 
 ## Prerequisites
 

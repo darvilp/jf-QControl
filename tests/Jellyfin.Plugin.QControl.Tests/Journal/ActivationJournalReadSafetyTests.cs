@@ -124,6 +124,8 @@ public sealed class ActivationJournalReadSafetyTests
                 "initialEnabled",
                 "lastFailure",
                 "lastSuccessfulReconciliation",
+                "manualRestoreStage",
+                "manualRestoreTarget",
                 "markerAddStage",
                 "markerRemoveStage",
                 "markerTag",

@@ -52,7 +52,7 @@ public sealed class ProtectionActionSet : IProtectionActionSet
         }
         catch (QbittorrentClientException exception)
         {
-            failure = MapFailure(exception.Error);
+            failure = QbittorrentFailureMapper.Map(exception.Error);
             journal = await ReloadLatestAsync(journal, cancellationToken).ConfigureAwait(false);
         }
 
@@ -64,7 +64,7 @@ public sealed class ProtectionActionSet : IProtectionActionSet
         }
         catch (QbittorrentClientException exception)
         {
-            failure ??= MapFailure(exception.Error);
+            failure ??= QbittorrentFailureMapper.Map(exception.Error);
             journal = await ReloadLatestAsync(journal, cancellationToken).ConfigureAwait(false);
         }
 
@@ -88,7 +88,7 @@ public sealed class ProtectionActionSet : IProtectionActionSet
         }
         catch (QbittorrentClientException exception)
         {
-            failure = MapFailure(exception.Error);
+            failure = QbittorrentFailureMapper.Map(exception.Error);
             journal = await ReloadLatestAsync(journal, cancellationToken).ConfigureAwait(false);
         }
 
@@ -100,7 +100,7 @@ public sealed class ProtectionActionSet : IProtectionActionSet
         }
         catch (QbittorrentClientException exception)
         {
-            failure ??= MapFailure(exception.Error);
+            failure ??= QbittorrentFailureMapper.Map(exception.Error);
             journal = await ReloadLatestAsync(journal, cancellationToken).ConfigureAwait(false);
         }
 
@@ -130,19 +130,5 @@ public sealed class ProtectionActionSet : IProtectionActionSet
                 entry.StartStage != JournalMutationStage.IntentPersisted
                 && entry.MarkerRemoveStage != JournalMutationStage.IntentPersisted);
         return alternativeLimitsSettled && torrentsSettled;
-    }
-
-    private static JournalFailureCode MapFailure(QbittorrentClientError error)
-    {
-        return error switch
-        {
-            QbittorrentClientError.Timeout => JournalFailureCode.Timeout,
-            QbittorrentClientError.Connection => JournalFailureCode.Connection,
-            QbittorrentClientError.Authentication => JournalFailureCode.Authentication,
-            QbittorrentClientError.InvalidResponse => JournalFailureCode.InvalidResponse,
-            QbittorrentClientError.UnsupportedVersion => JournalFailureCode.UnsupportedVersion,
-            QbittorrentClientError.Credential => JournalFailureCode.Credential,
-            _ => throw new ArgumentOutOfRangeException(nameof(error), error, "Unknown qBittorrent failure."),
-        };
     }
 }

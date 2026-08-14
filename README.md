@@ -8,9 +8,10 @@ restore the controlled state after a configurable grace period.
 The repository currently contains the loadable Jellyfin 10.11 plugin,
 package tooling, isolated Jellyfin/qBittorrent compatibility fixtures,
 journaled Stop Torrents and Alternative Limits action slices, and the hosted
-Jellyfin playback coordinator. Administrator configuration is the next
-implementation slice; until it validates and enables an action, the hosted
-coordinator is deliberately inert.
+Jellyfin playback coordinator. Administrator-only server APIs now validate and
+activate configuration, report privacy-safe operational state, and provide
+explicit recovery operations. A new installation remains deliberately inert
+until a connection test succeeds and an action is enabled.
 
 ## V1 direction
 
@@ -49,6 +50,7 @@ scripts/test-issue-001.sh
 scripts/test-issue-005.sh
 scripts/test-issue-006.sh
 scripts/test-issue-007.sh
+scripts/test-issue-008.sh
 ```
 
 The issue gates run the Docker compatibility suite and use only the
@@ -56,8 +58,11 @@ project-owned state below `.testenv/`; Issue 005 additionally exercises real
 journaled torrent protection and restoration, Issue 006 adds real Alternative
 Limits ownership, and Issue 007 runs the packaged hosted coordinator through
 real playing, paused, overlapping, stopped, and disconnected Jellyfin session
-shapes. QControl uses loopback ports `18196` and `18180`, so the TagSync fixture
-can remain running on `18096`.
+shapes. Issue 008 additionally proves administrator authorization, secret-file
+connection validation, category discovery, both enabled actions, live status,
+credential-free journaling, grace release, and exact restoration through the
+packaged plugin. QControl uses loopback ports `18196` and `18180`, so the
+TagSync fixture can remain running on `18096`.
 
 ## License
 

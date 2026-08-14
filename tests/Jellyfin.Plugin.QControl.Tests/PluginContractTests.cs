@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Jellyfin.Plugin.QControl.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -42,5 +43,9 @@ public sealed class PluginContractTests
 
         using var resource = assembly.GetManifestResourceStream(page.EmbeddedResourcePath);
         Assert.NotNull(resource);
+
+        var typedPlugin = Assert.IsType<Jellyfin.Plugin.QControl.Plugin>(instance);
+        Assert.Throws<InvalidOperationException>(() =>
+            typedPlugin.UpdateConfiguration(new PluginConfiguration()));
     }
 }

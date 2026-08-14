@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.QControl.Coordination;
 /// </summary>
 public sealed class ProtectionCoordinatorWorker : BackgroundService, IProtectionWakeSignal
 {
-    private static readonly TimeSpan InactiveInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan InactiveInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan ActiveInterval = TimeSpan.FromSeconds(15);
     private static readonly Action<ILogger, string, Exception?> LogReconciliationFailure =
         LoggerMessage.Define<string>(

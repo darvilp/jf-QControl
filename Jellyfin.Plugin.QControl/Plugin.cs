@@ -21,7 +21,13 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         : base(applicationPaths, xmlSerializer)
     {
+        Instance = this;
     }
+
+    /// <summary>
+    /// Gets the loaded plugin instance.
+    /// </summary>
+    public static Plugin Instance { get; private set; } = null!;
 
     /// <inheritdoc />
     public override string Name => "QControl";
@@ -41,5 +47,23 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
             Name = Name,
             EmbeddedResourcePath = "Jellyfin.Plugin.QControl.Configuration.configPage.html",
         };
+    }
+
+    /// <inheritdoc />
+    public override void UpdateConfiguration(BasePluginConfiguration configuration)
+    {
+        throw new InvalidOperationException(
+            "QControl configuration must use the validated administrator endpoint.");
+    }
+
+    /// <summary>
+    /// Persists and activates one server-validated configuration.
+    /// </summary>
+    /// <param name="configuration">The complete accepted configuration.</param>
+    internal void ActivateValidatedConfiguration(PluginConfiguration configuration)
+    {
+        SaveConfiguration(configuration);
+        Configuration = configuration;
+        ConfigurationChanged?.Invoke(this, configuration);
     }
 }
