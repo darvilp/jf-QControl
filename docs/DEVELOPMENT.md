@@ -99,6 +99,28 @@ Bootstrap flow:
 The credential and temporary WebUI password must never appear in repository
 files, normal test output, captured screenshots, or retained artifacts.
 
+## Activation journal
+
+The runtime journal path is always resolved from Jellyfin's
+`PluginConfigurationsPath` and ends in
+`Jellyfin.Plugin.QControl.journal.json`. It never uses the plugin binary or
+cache directory. The store writes a uniquely named temporary file in that same
+directory with write-through enabled, flushes it, and atomically replaces the
+prior document. Native Unix files are mode `0600`; Windows files inherit the
+Jellyfin service account's configuration-directory ACL.
+
+Schema version 1 stores only activation identifiers, session IDs, the behavior
+snapshot, credential-free endpoint identity, bounded failure codes, and action
+progress. It has no free-form diagnostic or display-name fields. A valid
+journal owned by another process grants protect-only authority; corrupt or
+unsupported documents grant no automatic mutation authority.
+
+Run its full repository gate with:
+
+```bash
+scripts/test-issue-004.sh
+```
+
 ## Torrent fixtures
 
 The suite generates small deterministic payloads and trackerless v1 `.torrent`

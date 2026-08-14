@@ -151,7 +151,11 @@ shell lint, and package verification.
 
 ## Deferred boundaries
 
-- The durable journal begins in Issue 004.
+- Issue 004's physical journal store round-tripped beside a simulated runtime
+  configuration directory, proved old-or-new visibility under injected write
+  and replacement failures, and resolved the same sibling path shape already
+  retained by the Jellyfin container restart fixture. Coordinator integration
+  begins in later vertical slices.
 - In-process event subscription and serialized reconciliation begin in Issue
   007; Issue 001 proves the exact event surface and runtime snapshot shapes.
 - The credential source uses platform-native .NET file APIs without Unix path
