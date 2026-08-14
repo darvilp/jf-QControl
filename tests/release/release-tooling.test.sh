@@ -16,6 +16,7 @@ tag="v${version}"
 target_abi="$("${read_build_metadata}" targetAbi)"
 asset_name="Jellyfin.Plugin.QControl_${version}.zip"
 source_url="https://github.com/darvilp/jf-QControl/releases/download/${tag}/${asset_name}"
+catalog_url="https://raw.githubusercontent.com/darvilp/jf-QControl/manifest/manifest.json"
 package_path="${temp_root}/${asset_name}"
 staging="${temp_root}/package"
 
@@ -29,6 +30,9 @@ done
 test -f "${workflow_path}"
 test -f "${project_root}/docs/RELEASE.md"
 test -f "${project_root}/docs/releases/v${version}-alpha.md"
+
+grep --fixed-strings "${catalog_url}" "${project_root}/README.md" >/dev/null
+grep --fixed-strings "${catalog_url}" "${project_root}/docs/RELEASE.md" >/dev/null
 
 grep --fixed-strings 'workflow_dispatch:' "${workflow_path}" >/dev/null
 grep --fixed-strings -- '- "v*.*.*.*"' "${workflow_path}" >/dev/null

@@ -1,10 +1,29 @@
 # Release preparation
 
 QControl uses four-component plugin versions such as `0.1.0.0` and matching
-tags such as `v0.1.0.0`. The current alpha is prepared for testing; no public
-release or catalog manifest has been published.
+tags such as `v0.1.0.0`.
 
-## Install an alpha test package
+## Install from the Jellyfin catalog
+
+The permanent QControl repository URL is:
+
+```text
+https://raw.githubusercontent.com/darvilp/jf-QControl/manifest/manifest.json
+```
+
+1. In Jellyfin, open **Dashboard > Plugins > Repositories**.
+2. Add a repository named `QControl` with the URL above and save it.
+3. Open **Catalog**, select QControl, install the alpha, and restart Jellyfin.
+4. Confirm **Dashboard > Plugins > My Plugins > QControl** shows the expected
+   version as Active.
+5. Open **Dashboard > Plugins > QControl**, configure and test the qBittorrent
+   connection, enable at least one action, and save.
+
+The catalog branch is intentionally separate from `main`. Each entry points to
+an immutable GitHub release asset; publishing the asset before updating the
+catalog prevents Jellyfin from seeing an install entry with a dead download.
+
+## Install an alpha package manually
 
 1. Confirm the Jellyfin server is `10.11.11`. Stop Jellyfin.
 2. Create a `QControl` directory under Jellyfin's plugin directory.

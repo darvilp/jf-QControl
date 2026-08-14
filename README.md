@@ -15,6 +15,19 @@ those contracts through native, responsive Jellyfin controls without reading
 stored credential content. A new installation remains deliberately inert until
 a connection test succeeds and an action is enabled.
 
+## Install the alpha
+
+In **Dashboard > Plugins > Repositories**, add a repository named `QControl`
+with this URL:
+
+```text
+https://raw.githubusercontent.com/darvilp/jf-QControl/manifest/manifest.json
+```
+
+Save the repository, open **Catalog**, install QControl, and restart Jellyfin.
+The current alpha targets Jellyfin `10.11.11`; review the
+[release and installation notes](docs/RELEASE.md) before enabling actions.
+
 ## V1 direction
 
 - Jellyfin 10.11 plugin running in-process with the server.
@@ -75,7 +88,8 @@ configuration, recovery confirmation, keyboard focus order, credential
 non-round-trip, and narrow-layout overflow.
 Issue 010 adds real web-player activation, a hard Jellyfin interruption,
 qBittorrent acquisition/restoration outages, clean temporary-manifest install,
-and locally prepared alpha assets. It does not publish a release.
+and locally prepared alpha assets. Publication remains an explicit maintainer
+operation after those gates pass.
 
 ## License
 
