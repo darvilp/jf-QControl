@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Xml;
 using System.Xml.Serialization;
 using Jellyfin.Plugin.QControl.Configuration;
@@ -28,5 +29,28 @@ public sealed class PluginConfigurationContractTests
 
         var roundTripped = Assert.IsType<PluginConfiguration>(serializer.Deserialize(reader));
         Assert.Equal(1, schemaVersion.GetValue(roundTripped));
+    }
+
+    [Fact]
+    public void StoredApiKeyPersistsToHostConfigurationButNotJsonReads()
+    {
+        const string apiKey = "qbt_0123456789abcdefghijklmnopqr";
+        var configuration = new PluginConfiguration
+        {
+            QbittorrentApiKey = apiKey,
+        };
+        var xmlSerializer = new XmlSerializer(typeof(PluginConfiguration));
+        using var document = new MemoryStream();
+
+        xmlSerializer.Serialize(document, configuration);
+        var persistedXml = System.Text.Encoding.UTF8.GetString(document.ToArray());
+        var configurationRead = JsonSerializer.Serialize(configuration);
+
+        Assert.Contains(apiKey, persistedXml, System.StringComparison.Ordinal);
+        Assert.DoesNotContain(apiKey, configurationRead, System.StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            nameof(PluginConfiguration.QbittorrentApiKey),
+            configurationRead,
+            System.StringComparison.OrdinalIgnoreCase);
     }
 }

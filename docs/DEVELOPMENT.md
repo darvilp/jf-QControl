@@ -10,6 +10,7 @@ scripts/dotnet.sh restore Jellyfin.Plugin.QControl.sln
 scripts/dotnet.sh build Jellyfin.Plugin.QControl.sln --configuration Release --no-restore
 scripts/dotnet.sh test Jellyfin.Plugin.QControl.sln --configuration Release --no-build --no-restore
 tests/packaging/package-contract.test.sh
+tests/fixtures/qbittorrent-client-contract.test.sh
 ```
 
 Run the complete repository-skeleton and compatibility gate with:
@@ -21,6 +22,17 @@ scripts/test-issue-001.sh
 That gate runs shell lint, .NET tests, package verification, static fixture
 checks, the teardown ownership proof, real qBittorrent state/mutation probes,
 real Jellyfin session snapshots, and packaged-plugin installation.
+
+Run the qBittorrent client and credential gate with:
+
+```bash
+scripts/test-issue-003.sh
+```
+
+The qBittorrent client contract command starts the isolated stack, creates six
+dummy torrents, and runs the production C# adapter through every V1 endpoint.
+It restores the selected torrent's stopped state, its temporary tag, and the
+initial Alternative Limits mode before teardown.
 
 ## Prerequisites
 

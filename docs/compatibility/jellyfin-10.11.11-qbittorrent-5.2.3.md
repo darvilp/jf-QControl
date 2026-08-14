@@ -94,6 +94,11 @@ key.
 Read-only probes successfully returned application version, Web API version,
 Alternative Limits state, categories, tags, and torrent information.
 
+Issue 003 then ran the production typed client against the same container using
+the mode-`0600` secret file. The adapter accepted application `5.2.3` and Web
+API `2.15.1`, returned only neutral policy fields (hash, category, bytes
+remaining, stopped state, and tags), and never exposed torrent names.
+
 ## Stable torrent states
 
 | Fixture | Observed qBittorrent state | Progress |
@@ -118,7 +123,7 @@ tags, progress/completion, and stopped/running state. Categories `radarr` and
 Against explicit hashes only, qBittorrent accepted and confirmed:
 
 - enable and disable Alternative Limits through the deterministic get/toggle/get
-  sequence;
+  fixture sequence and the production client's `setSpeedLimitsMode` setter;
 - category assignment and restoration;
 - tag creation, assignment, removal, and deletion;
 - `torrents/start` from `stoppedDL` to a non-stopped accepted state;
@@ -136,6 +141,7 @@ tests/fixtures/environment-contract.test.sh
 tests/fixtures/teardown-guard.test.sh
 tests/fixtures/qbittorrent-compatibility.test.sh
 tests/fixtures/qbittorrent-mutations.test.sh
+tests/fixtures/qbittorrent-client-contract.test.sh
 tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
 ```
@@ -145,12 +151,11 @@ shell lint, and package verification.
 
 ## Deferred boundaries
 
-- The production qBittorrent client, credential sources, and redaction tests
-  begin in Issue 003.
 - The durable journal begins in Issue 004.
 - In-process event subscription and serialized reconciliation begin in Issue
   007; Issue 001 proves the exact event surface and runtime snapshot shapes.
-- A native Windows secret-file smoke cannot be claimed from this Linux host.
-  Issue 003 must add Windows path unit coverage and document a native Jellyfin
-  smoke procedure before the alpha is called cross-platform ready.
+- The credential source uses platform-native .NET file APIs without Unix path
+  parsing, but a native Windows secret-file smoke cannot be claimed from this
+  Linux host. The Windows alpha procedure must verify a Jellyfin-service-readable,
+  ACL-protected key file before cross-platform readiness is claimed.
 - A real browser/player smoke remains in Issue 010.
