@@ -3,9 +3,9 @@
 Status: **passed on 2026-08-14**
 
 This report began as the Issue 001 compatibility spike and now also records the
-production qBittorrent client, physical journal, Stop Torrents, and Alternative
-Limits vertical-slice evidence completed through Issue 006. Jellyfin playback
-coordination remains a later slice.
+production qBittorrent client, physical journal, Stop Torrents, Alternative
+Limits, and hosted Jellyfin playback coordination evidence completed through
+Issue 007.
 
 ## Pinned environment
 
@@ -59,7 +59,8 @@ bind-mounted fixture:
 ```
 
 The compatibility test removed its journal sentinel after the persistence
-check. Journal serialization and atomic replacement remain Issue 004 work.
+check. Issue 004 separately proves journal serialization and atomic
+replacement.
 
 Reflection against the exact 10.11.11 controller assembly confirmed
 `ISessionManager` exposes `PlaybackStart`, `PlaybackProgress`,
@@ -75,8 +76,15 @@ snapshot shapes on the real server:
 - stopped: stopping one clears its current item without clearing the other;
 - disconnected: logout removes that device session from the snapshot.
 
-This validates the design choice that events are wake-ups and a fresh complete
-session snapshot is authoritative.
+Issue 007 installs the package before producing these sessions. Its production
+adapter projects only session ID, current-media presence, and paused state; its
+hosted observer turns the five real event types into bounded coalesced wakes.
+The coordinator rereads the complete session snapshot on every startup, event,
+periodic, retry, and grace-deadline pass. Fake-clock tests prove overlapping
+aggregation, paused protection, grace cancellation, exact-boundary release,
+serialization, retry, and cancellation-bounded shutdown. The unconfigured
+runtime created no activation journal during the real event sequence, as
+required for a new inert installation.
 
 ## qBittorrent authentication and reads
 
@@ -163,6 +171,7 @@ tests/fixtures/qbittorrent-action-contract.test.sh
 tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
 tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
+scripts/test-issue-007.sh
 ```
 
 `scripts/test-issue-001.sh` runs these together with restore, build, unit tests,
@@ -175,9 +184,10 @@ shell lint, and package verification.
   and replacement failures, and resolved the same sibling path shape already
   retained by the Jellyfin container restart fixture. Issue 005 then exercised
   that store at every Stop Torrents mutation boundary against the real fixture.
-- In-process event subscription and the top-level coordinator begin in Issue
-  007; Issue 001 proves the exact event surface and runtime snapshot shapes,
-  while Issue 005 proves serialization inside the Stop Torrents action seam.
+- Issue 008 replaces the deliberately inert runtime factory/action set with a
+  validated configuration snapshot and exposes privacy-safe status and explicit
+  recovery operations. Issue 007 already owns event subscription, scheduling,
+  lifecycle aggregation, and top-level action serialization.
 - The credential source uses platform-native .NET file APIs without Unix path
   parsing, but a native Windows secret-file smoke cannot be claimed from this
   Linux host. The Windows alpha procedure must verify a Jellyfin-service-readable,

@@ -61,6 +61,19 @@ disables it on same-process restoration. It then starts from enabled and proves
 the action remains unowned and leaves the mode enabled on restoration. The
 fixture restores the pre-test mode in all exit paths.
 
+Run the complete hosted playback-coordinator slice with:
+
+```bash
+scripts/test-issue-007.sh
+```
+
+This adds neutral `ISessionManager` projection, non-blocking coalesced event
+wakes, startup and periodic reconciliation, exact release-grace scheduling,
+serialized action passes, retry, and cancellation-bounded shutdown. The real
+Jellyfin session fixture installs the package before sending playing, paused,
+overlapping, stopped, and logout reports. The runtime remains inert until Issue
+008 provides a validated enabled configuration.
+
 ## Prerequisites
 
 - Git
@@ -183,8 +196,9 @@ reaches a mutation-free fixed point.
 
 Most integration scenarios act as a small authenticated Jellyfin client and use
 the real playback-reporting endpoints to produce playing, paused, overlapping,
-and stopped session state. This exercises real `ISessionManager` events and
-snapshots without performing a transcode in every test.
+and stopped session state. The package is installed before those reports, so
+this exercises the hosted event observer and real `ISessionManager` snapshots
+without performing a transcode in every test.
 
 A browser/client smoke remains part of the alpha hardening issue. Issue 001
 proves the same server-side session shapes through authenticated playback

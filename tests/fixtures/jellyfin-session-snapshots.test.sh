@@ -5,6 +5,7 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd -- "${script_dir}/../.." && pwd)"
 environment_script="${project_root}/scripts/test-env.sh"
+install_script="${project_root}/scripts/install-local-plugin.sh"
 server_url="http://127.0.0.1:18196"
 completed=0
 
@@ -76,6 +77,8 @@ report_stop() {
 "${environment_script}" reset --confirm
 "${environment_script}" up
 "${project_root}/scripts/configure-test-server.sh"
+artifact_path="$("${project_root}/scripts/package.sh" | tail -n 1)"
+"${install_script}" "${artifact_path}"
 admin_token="$(<"${project_root}/.testenv/jellyfin/access-token")"
 items="$(curl --fail --silent --show-error \
     --header "X-Emby-Token: ${admin_token}" \
@@ -130,5 +133,8 @@ jq --exit-status \
     '([.[] | select(.DeviceId == $second)] | length == 0)' \
     <<<"${sessions}" >/dev/null
 
+test ! -e "${project_root}/.testenv/jellyfin/config/plugins/configurations/Jellyfin.Plugin.QControl.journal.json"
+curl --fail --silent "${server_url}/health" | grep --fixed-strings 'Healthy' >/dev/null
+
 completed=1
-printf 'Verified playing, paused, stopped, disconnected, and overlapping Jellyfin snapshots.\n'
+printf 'Verified the hosted plugin with playing, paused, stopped, disconnected, and overlapping Jellyfin snapshots.\n'
