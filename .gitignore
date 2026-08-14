@@ -1,0 +1,43 @@
+# .NET build output
+**/bin/
+**/obj/
+artifacts/
+TestResults/
+coverage/
+node_modules/
+
+# IDE and editor state
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Isolated Jellyfin/qBittorrent test state
+.testenv/
+.jellyfin/
+jellyfin-data/
+jellyfin-config/
+jellyfin-cache/
+jellyfin-logs/
+qbittorrent-config/
+qbittorrent-downloads/
+playwright/.auth/
+
+# Local credentials and environment overrides
+.env
+.env.*
+!.env.example
+*.secret
+secrets/
+
+# Local Codex and agent state
+.agents/
+.codex/
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
