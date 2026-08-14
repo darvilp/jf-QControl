@@ -73,6 +73,9 @@ test('administrator configures the real page without credential round-trip', asy
     expect(connectionCandidate.ApiKeyReplacement).toBe('');
     await expect(page.locator('#qControlConnectionStatus')).toContainText(/connected to qBittorrent 5\.2\.3/i);
 
+    await page.getByRole('button', { name: 'Set file path' }).click();
+    await expect(page.locator('#qControlConnectionStatus')).toContainText(/file path set and saved/i);
+
     await page.getByText('Use qBittorrent Alternative Limits during playback', { exact: true }).click();
     await expect(page.locator('#qControlAlternativeLimitsEnabled')).toBeChecked();
     await page.getByText('Stop selected torrents during playback', { exact: true }).click();

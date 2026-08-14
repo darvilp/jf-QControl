@@ -386,6 +386,9 @@ trusted subnet.
 
 - A saved key is represented only as configured/not configured.
 - A blank replacement field retains the current stored value.
+- **Set API key** and **Set file path** persist only the connection panel; unrelated
+  unsaved protection edits are not committed.
+- Testing a connection uses the currently entered values without saving them.
 - Replacing and clearing credentials are explicit actions.
 - Connection-test responses never echo a credential.
 - Authorization headers and strings beginning with `qbt_` are redacted.

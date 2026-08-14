@@ -83,6 +83,8 @@ class FakeView {
         for (const action of [
             'refresh-status',
             'test-connection',
+            'set-api-key',
+            'set-secret-file',
             'save-configuration',
             'resume-marked',
             'restore-speed',
@@ -332,7 +334,93 @@ test('loading a stored credential exposes presence but never its content', async
     assert.equal(view.querySelector('#qControlConfigurationForm').attributes.has('inert'), false);
     assert.equal(apiKey.value, '');
     assert.match(apiKey.placeholder, /configured/i);
+    assert.match(view.querySelector('#qControlApiKeyHelp').textContent, /Set API key/i);
     assert.doesNotMatch(JSON.stringify(calls), /qbt_/i);
+});
+
+test('Set API key explicitly persists the connection without saving unrelated edits', async () => {
+    const replacement = 'qbt_abcdefghijklmnopqrstuvwxyz12';
+    const { calls, view } = createHarness(async (path, method, body) => {
+        if (path === 'QControl/Configuration' && method === 'GET') {
+            return configuration();
+        }
+
+        if (path === 'QControl/Status') {
+            return operationalStatus();
+        }
+
+        if (path === 'QControl/Connection/Categories') {
+            return { IsConnected: true, Categories: [] };
+        }
+
+        if (path === 'QControl/Configuration' && method === 'PUT') {
+            return {
+                Outcome: 'Accepted',
+                Configuration: configuration({
+                    Revision: 5,
+                    QbittorrentBaseAddress: body.QbittorrentBaseAddress
+                })
+            };
+        }
+
+        return {};
+    });
+    await view.dispatch('viewshow');
+    view.querySelector('#qControlBaseAddress').value = 'http://localhost:8081';
+    view.querySelector('#qControlApiKey').value = replacement;
+    view.querySelector('#qControlReleaseGraceSeconds').value = '900';
+
+    await view.dispatch('click', view.querySelector('[data-action="set-api-key"]'));
+
+    const request = calls.find(call => call.path === 'QControl/Configuration' && call.method === 'PUT');
+    assert.equal(request.body.QbittorrentBaseAddress, 'http://localhost:8081');
+    assert.equal(request.body.ApiKeyReplacement, replacement);
+    assert.equal(request.body.ReleaseGraceSeconds, 60);
+    assert.equal(view.querySelector('#qControlReleaseGraceSeconds').value, '900');
+    assert.equal(view.querySelector('#qControlApiKey').value, '');
+    assert.match(view.querySelector('#qControlConnectionStatus').textContent, /API key set/i);
+});
+
+test('Set file path explicitly persists file authentication without a stored-key replacement', async () => {
+    const secretPath = 'C:\\ProgramData\\Jellyfin\\qbit-api-key.txt';
+    const { calls, view } = createHarness(async (path, method) => {
+        if (path === 'QControl/Configuration' && method === 'GET') {
+            return configuration();
+        }
+
+        if (path === 'QControl/Status') {
+            return operationalStatus();
+        }
+
+        if (path === 'QControl/Connection/Categories') {
+            return { IsConnected: true, Categories: [] };
+        }
+
+        if (path === 'QControl/Configuration' && method === 'PUT') {
+            return {
+                Outcome: 'Accepted',
+                Configuration: configuration({
+                    Revision: 5,
+                    CredentialMode: 'SecretFile',
+                    SecretFilePath: secretPath
+                })
+            };
+        }
+
+        return {};
+    });
+    await view.dispatch('viewshow');
+    view.querySelector('#qControlCredentialMode').value = '1';
+    view.querySelector('#qControlSecretFilePath').value = secretPath;
+    await view.dispatch('change', view.querySelector('#qControlCredentialMode'));
+
+    await view.dispatch('click', view.querySelector('[data-action="set-secret-file"]'));
+
+    const request = calls.find(call => call.path === 'QControl/Configuration' && call.method === 'PUT');
+    assert.equal(request.body.CredentialMode, 1);
+    assert.equal(request.body.SecretFilePath, secretPath);
+    assert.equal(request.body.ApiKeyReplacement, '');
+    assert.match(view.querySelector('#qControlConnectionStatus').textContent, /file path set/i);
 });
 
 test('connection test sends a write-only replacement while switching to a native secret file', async () => {
@@ -375,6 +463,7 @@ test('connection test sends a write-only replacement while switching to a native
     assert.equal(request.body.SecretFilePath, 'C:\\ProgramData\\Jellyfin\\qbit.key');
     assert.equal(request.body.ApiKeyReplacement, '');
     assert.equal('QbittorrentApiKey' in request.body, false);
+    assert.equal(calls.some(call => call.path === 'QControl/Configuration' && call.method === 'PUT'), false);
 });
 
 test('administrator can test an explicit unauthenticated connection without credential inputs', async () => {

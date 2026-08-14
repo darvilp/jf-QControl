@@ -77,6 +77,33 @@ export function buildConfigurationCandidate(editor) {
 }
 
 /**
+ * Builds a connection-only update while retaining the saved protection settings.
+ *
+ * @param {object} configuration current credential-safe server configuration
+ * @param {object} editor current connection editor values
+ * @returns {object} complete API candidate
+ */
+export function buildConnectionCandidate(configuration, editor) {
+    return buildConfigurationCandidate({
+        revision: property(configuration, 'Revision', 0),
+        baseAddress: editor.baseAddress,
+        credentialMode: editor.credentialMode,
+        apiKeyReplacement: editor.apiKeyReplacement,
+        clearStoredApiKey: editor.clearStoredApiKey,
+        secretFilePath: editor.secretFilePath,
+        alternativeLimitsEnabled: property(configuration, 'AlternativeLimitsEnabled', false),
+        stopTorrentsEnabled: property(configuration, 'StopTorrentsEnabled', false),
+        stopScope: property(configuration, 'StopScope', 0),
+        selectedCategories: property(configuration, 'SelectedCategories', []) ?? [],
+        includeIncomplete: property(configuration, 'IncludeIncomplete', true),
+        includeCompleted: property(configuration, 'IncludeCompleted', true),
+        markerTag: property(configuration, 'MarkerTag', 'jfStopped'),
+        neverTouchTag: property(configuration, 'NeverTouchTag', 'jfNeverTouch'),
+        releaseGraceSeconds: property(configuration, 'ReleaseGraceSeconds', 60)
+    });
+}
+
+/**
  * Checks only whether the editor can express a usable request; the server remains authoritative.
  *
  * @param {object} editor current editor values
@@ -403,9 +430,7 @@ export default function createPageController(view) {
         query('#qControlStopTorrentsEnabled').setAttribute('aria-invalid', problem ? 'true' : 'false');
     }
 
-    function renderConfiguration(configuration) {
-        state.configuration = configuration;
-        state.categoryEditorInitialized = false;
+    function renderConnection(configuration) {
         query('#qControlBaseAddress').value = String(property(configuration, 'QbittorrentBaseAddress', '') ?? '');
         query('#qControlCredentialMode').value = String(enumValue(
             property(configuration, 'CredentialMode', 0),
@@ -415,14 +440,20 @@ export default function createPageController(view) {
         apiKeyInput.value = '';
         const hasStoredKey = Boolean(property(configuration, 'HasStoredApiKey', false));
         apiKeyInput.placeholder = hasStoredKey
-            ? 'Configured — leave blank to retain'
+            ? 'Configured — paste to replace'
             : 'Paste a qBittorrent API key';
         query('#qControlApiKeyHelp').textContent = hasStoredKey
-            ? 'A key is stored. Its content was not returned; leave this blank to retain it.'
-            : 'Paste a qBittorrent API key. Existing key content is never returned to this page.';
+            ? 'A key is stored. Its content was not returned; paste a replacement and select Set API key to update it.'
+            : 'Paste a qBittorrent API key, then select Set API key. Existing key content is never returned to this page.';
         setHidden('#qControlClearStoredKeyContainer', !hasStoredKey);
         query('#qControlClearStoredKey').checked = false;
         query('#qControlSecretFilePath').value = String(property(configuration, 'SecretFilePath', '') ?? '');
+    }
+
+    function renderConfiguration(configuration) {
+        state.configuration = configuration;
+        state.categoryEditorInitialized = false;
+        renderConnection(configuration);
         query('#qControlAlternativeLimitsEnabled').checked = Boolean(property(configuration, 'AlternativeLimitsEnabled', false));
         query('#qControlStopTorrentsEnabled').checked = Boolean(property(configuration, 'StopTorrentsEnabled', false));
         query('#qControlStopScope').value = String(enumValue(
@@ -435,6 +466,12 @@ export default function createPageController(view) {
         query('#qControlNeverTouchTag').value = String(property(configuration, 'NeverTouchTag', 'jfNeverTouch') ?? '');
         query('#qControlReleaseGraceSeconds').value = String(property(configuration, 'ReleaseGraceSeconds', 60));
         renderCategories(false);
+        updateEditorState();
+    }
+
+    function renderSavedConnection(configuration) {
+        state.configuration = configuration;
+        renderConnection(configuration);
         updateEditorState();
     }
 
@@ -526,6 +563,52 @@ export default function createPageController(view) {
                 failureMessage(
                     property(result, 'Failure', null),
                     'The server could not test this qBittorrent connection.'),
+                'Error');
+        }
+    }
+
+    async function setCredential(kind) {
+        const editor = readEditor();
+        if (kind === 'api-key') {
+            if (!String(editor.apiKeyReplacement ?? '').trim()) {
+                setInlineStatus('#qControlConnectionStatus', 'Paste an API key before selecting Set API key.', 'Warning');
+                return;
+            }
+
+            editor.credentialMode = 0;
+            editor.clearStoredApiKey = false;
+        } else {
+            if (!String(editor.secretFilePath ?? '').trim()) {
+                setInlineStatus('#qControlConnectionStatus', 'Enter a file path before selecting Set file path.', 'Warning');
+                return;
+            }
+
+            editor.credentialMode = 1;
+            editor.apiKeyReplacement = '';
+            editor.clearStoredApiKey = false;
+        }
+
+        const label = kind === 'api-key' ? 'API key' : 'API-key file path';
+        setInlineStatus('#qControlConnectionStatus', `Setting the ${label}…`);
+        try {
+            const result = await requestJson(
+                apiClient,
+                'PUT',
+                'QControl/Configuration',
+                buildConnectionCandidate(state.configuration, editor));
+            if (!outcomeEquals(property(result, 'Outcome', null), 'Accepted')) {
+                setInlineStatus('#qControlConnectionStatus', saveOutcomeMessage(result), 'Error');
+                return;
+            }
+
+            renderSavedConnection(property(result, 'Configuration', {}));
+            setInlineStatus('#qControlConnectionStatus', `${label} set and saved.`, 'Success');
+            await refreshStatus();
+        } catch (error) {
+            const result = responsePayload(error);
+            setInlineStatus(
+                '#qControlConnectionStatus',
+                result ? saveOutcomeMessage(result) : `The server could not set the ${label}.`,
                 'Error');
         }
     }
@@ -680,6 +763,12 @@ export default function createPageController(view) {
                 break;
             case 'test-connection':
                 await testConnection();
+                break;
+            case 'set-api-key':
+                await setCredential('api-key');
+                break;
+            case 'set-secret-file':
+                await setCredential('secret-file');
                 break;
             case 'save-configuration':
                 await saveConfiguration();

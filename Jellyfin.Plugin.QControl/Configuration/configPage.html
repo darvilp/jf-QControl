@@ -64,7 +64,14 @@
                         <input is="emby-input" id="qControlApiKey" type="password"
                                value="" autocomplete="new-password" spellcheck="false" />
                         <div id="qControlApiKeyHelp" class="fieldDescription">
-                            Paste a qBittorrent API key. Existing key content is never returned to this page.
+                            Paste a qBittorrent API key, then select Set API key. Existing key content is never
+                            returned to this page.
+                        </div>
+                        <div class="qControlCredentialAction">
+                            <button is="emby-button" type="button" class="raised button"
+                                    data-action="set-api-key">
+                                <span>Set API key</span>
+                            </button>
                         </div>
                     </div>
 
@@ -73,7 +80,14 @@
                         <input is="emby-input" id="qControlSecretFilePath" type="text"
                                autocomplete="off" spellcheck="false" />
                         <div class="fieldDescription">
-                            Enter a native path readable by the Jellyfin service account, on Linux or Windows.
+                            Enter a native path readable by the Jellyfin service account, on Linux or Windows, then
+                            select Set file path.
+                        </div>
+                        <div class="qControlCredentialAction">
+                            <button is="emby-button" type="button" class="raised button"
+                                    data-action="set-secret-file">
+                                <span>Set file path</span>
+                            </button>
                         </div>
                     </div>
 
@@ -93,6 +107,9 @@
                                 data-action="test-connection">
                             <span>Test connection</span>
                         </button>
+                    </div>
+                    <div class="fieldDescription">
+                        Test connection uses the values currently shown above but does not save them.
                     </div>
                     <div id="qControlConnectionStatus" class="qControlInlineStatus" aria-live="polite"></div>
                 </section>
@@ -270,6 +287,8 @@
         .qControlStatusPanel ul { margin-bottom: 0; }
         .qControlActions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
         .qControlActions .emby-button { margin: 0; }
+        .qControlCredentialAction { margin-top: .75rem; }
+        .qControlCredentialAction .emby-button { margin: 0; }
         .qControlInlineStatus { margin: .75rem 0; min-height: 1.5rem; overflow-wrap: anywhere; }
         .qControlError { color: #ffb3b3; }
         .qControlWarning { color: #ffd27f; }
