@@ -11,6 +11,7 @@ description: >
   Alternative Limits or explicit torrent stops.
 category: "General"
 artifacts:
+  - "Jellyfin.Plugin.QControl.Domain.dll"
   - "Jellyfin.Plugin.QControl.dll"
 changelog: >
   Initial development package with a loadable Jellyfin 10.11 plugin skeleton.

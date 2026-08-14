@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../Jellyfin.Plugin.QControl.Domain/Jellyfin.Plugin.QControl.Domain.csproj" />
     <ProjectReference Include="../../Jellyfin.Plugin.QControl/Jellyfin.Plugin.QControl.csproj" />
   </ItemGroup>
 </Project>

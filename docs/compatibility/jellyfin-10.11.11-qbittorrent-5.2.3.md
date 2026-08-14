@@ -35,7 +35,10 @@ The registry index digest is recorded above. The observed LinuxServer build was
 
 ## Jellyfin contracts
 
-The JPRM package contained only `Jellyfin.Plugin.QControl.dll` and `meta.json`.
+The JPRM package initially contained only `Jellyfin.Plugin.QControl.dll` and
+`meta.json`. Issue 002 added the framework-free
+`Jellyfin.Plugin.QControl.Domain.dll`; package contract tests require exactly
+those two assemblies and `meta.json`.
 Jellyfin logged `Loaded plugin: QControl 0.1.0.0`, returned it as `Active` from
 `GET /Plugins`, returned schema version 1 from its configuration endpoint, and
 served `Jellyfin.Plugin.QControl.Configuration.configPage.html` through

@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Jellyfin.Plugin.QControl.Domain/Jellyfin.Plugin.QControl.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Jellyfin.Controller">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>

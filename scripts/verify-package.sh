@@ -14,6 +14,7 @@ fi
 
 mapfile -t package_entries < <(unzip -Z1 "${artifact_path}" | sort)
 expected_entries=(
+    "Jellyfin.Plugin.QControl.Domain.dll"
     "Jellyfin.Plugin.QControl.dll"
     "meta.json"
 )
