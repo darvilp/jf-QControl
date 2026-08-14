@@ -140,6 +140,10 @@ the JavaScript remains a thin client of the Issue 008 APIs and that native
 Jellyfin control enhancement, responsive layout, confirmation, and credential
 non-round-trip work after installation.
 
+Issue 010 adds a real hard-Jellyfin-interruption and qBittorrent-outage
+contract. The complete crash-point-to-test mapping is recorded in
+[`compatibility/interruption-and-outage-matrix.md`](compatibility/interruption-and-outage-matrix.md).
+
 ### 2.7 Release smoke tests
 
 Cover:

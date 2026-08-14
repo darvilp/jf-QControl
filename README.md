@@ -41,6 +41,8 @@ a connection test succeeds and an action is enabled.
 - [Issue specifications](docs/issues/)
 - [Research and references](docs/research/first-pass.md)
 - [Jellyfin 10.11.11 / qBittorrent 5.2.3 compatibility evidence](docs/compatibility/jellyfin-10.11.11-qbittorrent-5.2.3.md)
+- [Interruption and outage evidence matrix](docs/compatibility/interruption-and-outage-matrix.md)
+- [Alpha installation and release preparation](docs/RELEASE.md)
 
 ## Development quick start
 
@@ -54,6 +56,7 @@ scripts/test-issue-006.sh
 scripts/test-issue-007.sh
 scripts/test-issue-008.sh
 scripts/test-issue-009.sh
+scripts/test-issue-010.sh
 ```
 
 The issue gates run the Docker compatibility suite and use only the
@@ -70,6 +73,9 @@ Issue 009 adds controller/unit checks, served-resource verification, and a
 containerized Chromium smoke of the real administrator page: connection,
 configuration, recovery confirmation, keyboard focus order, credential
 non-round-trip, and narrow-layout overflow.
+Issue 010 adds real web-player activation, a hard Jellyfin interruption,
+qBittorrent acquisition/restoration outages, clean temporary-manifest install,
+and locally prepared alpha assets. It does not publish a release.
 
 ## License
 

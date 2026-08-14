@@ -50,6 +50,50 @@ public sealed class RecoveryServiceTests
     }
 
     [Fact]
+    public async Task ResumeMarkedSettlesAnAcceptedStartWhoseFirstReadbackIsStillStopped()
+    {
+        var events = new List<string>();
+        var store = new RecordingStore(events);
+        var qbit = new RecoveryQbittorrentClient(events)
+        {
+            Torrents = [Torrent("a", true, "jfStopped")],
+            DeferredStartReadbacks = 1,
+        };
+        using var gate = new ProtectionExecutionGate();
+        var service = CreateService(store, qbit, gate, new RecordingStateControl());
+
+        var result = await service.ResumeMarkedTorrentsAsync(CancellationToken.None);
+
+        Assert.Equal(RecoveryOutcome.Completed, result.Outcome);
+        Assert.Null(store.Current);
+        Assert.Equal(["a"], Assert.Single(qbit.StartCalls));
+        Assert.Equal(["a"], Assert.Single(qbit.RemoveTagCalls));
+    }
+
+    [Fact]
+    public async Task ResumeMarkedRetainsJournalWhenAcceptedStartNeverLeavesStoppedState()
+    {
+        var events = new List<string>();
+        var store = new RecordingStore(events);
+        var qbit = new RecoveryQbittorrentClient(events)
+        {
+            Torrents = [Torrent("a", true, "jfStopped")],
+            DeferredStartReadbacks = int.MaxValue,
+        };
+        using var gate = new ProtectionExecutionGate();
+        var service = CreateService(store, qbit, gate, new RecordingStateControl());
+
+        var result = await service.ResumeMarkedTorrentsAsync(CancellationToken.None);
+
+        Assert.Equal(RecoveryOutcome.Failed, result.Outcome);
+        Assert.Equal(JournalFailureCode.InvalidResponse, result.Failure);
+        Assert.NotNull(store.Current);
+        Assert.Equal(JournalMutationStage.IntentPersisted,
+            Assert.Single(store.Current.Torrents).StartStage);
+        Assert.Empty(qbit.RemoveTagCalls);
+    }
+
+    [Fact]
     public async Task RestorePreviousSpeedPersistsIntentAndRetriesAfterFailure()
     {
         var events = new List<string>();
@@ -140,6 +184,7 @@ public sealed class RecoveryServiceTests
             gate,
             state,
             new RecordingWakeSignal(),
+            new ImmediateDelay(),
             new StaticTimeProvider(new DateTimeOffset(2026, 8, 14, 12, 0, 0, TimeSpan.Zero)));
     }
 
@@ -266,6 +311,12 @@ public sealed class RecoveryServiceTests
         }
     }
 
+    private sealed class ImmediateDelay : IReconciliationDelay
+    {
+        public Task WaitAsync(TimeSpan delay, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+    }
+
     private sealed class StaticTimeProvider(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
@@ -279,6 +330,8 @@ public sealed class RecoveryServiceTests
 
         public QbittorrentClientException? SetFailure { get; set; }
 
+        public int DeferredStartReadbacks { get; set; }
+
         public List<IReadOnlyList<string>> StartCalls { get; } = [];
 
         public List<IReadOnlyList<string>> RemoveTagCalls { get; } = [];
@@ -287,10 +340,24 @@ public sealed class RecoveryServiceTests
 
         public int CallCount { get; private set; }
 
+        private string[] PendingStarts { get; set; } = [];
+
         public Task<IReadOnlyList<TorrentSnapshot>> GetTorrentsAsync(
             CancellationToken cancellationToken)
         {
             CallCount++;
+            if (PendingStarts.Length > 0)
+            {
+                if (DeferredStartReadbacks > 0)
+                {
+                    DeferredStartReadbacks--;
+                }
+                else
+                {
+                    ApplyPendingStarts();
+                }
+            }
+
             return Task.FromResult(Torrents);
         }
 
@@ -302,7 +369,19 @@ public sealed class RecoveryServiceTests
             events.Add("qbit:start");
             var copied = hashes.ToArray();
             StartCalls.Add(copied);
-            Torrents = Torrents.Select(torrent => copied.Contains(torrent.Hash, StringComparer.Ordinal)
+            PendingStarts = copied;
+            if (DeferredStartReadbacks > 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            ApplyPendingStarts();
+            return Task.CompletedTask;
+        }
+
+        private void ApplyPendingStarts()
+        {
+            Torrents = Torrents.Select(torrent => PendingStarts.Contains(torrent.Hash, StringComparer.Ordinal)
                 ? new TorrentSnapshot(
                     torrent.Hash,
                     torrent.Category,
@@ -310,7 +389,7 @@ public sealed class RecoveryServiceTests
                     false,
                     torrent.Tags)
                 : torrent).ToArray();
-            return Task.CompletedTask;
+            PendingStarts = [];
         }
 
         public Task RemoveTagAsync(

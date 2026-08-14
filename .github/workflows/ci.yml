@@ -42,7 +42,7 @@ jobs:
         run: dotnet test Jellyfin.Plugin.QControl.sln --configuration Release --no-build --no-restore --verbosity normal
 
       - name: Lint fixture tooling
-        run: shellcheck scripts/*.sh tests/fixtures/*.sh tests/packaging/*.sh
+        run: shellcheck scripts/*.sh tests/fixtures/*.sh tests/packaging/*.sh tests/release/*.sh
 
       - name: Verify static fixture contract
         run: tests/fixtures/environment-contract.test.sh

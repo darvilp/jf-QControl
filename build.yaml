@@ -14,4 +14,6 @@ artifacts:
   - "Jellyfin.Plugin.QControl.Domain.dll"
   - "Jellyfin.Plugin.QControl.dll"
 changelog: >
-  Initial development package with a loadable Jellyfin 10.11 plugin skeleton.
+  First alpha candidate with playback-driven Alternative Limits and journaled
+  explicit-torrent control, administrator configuration, and conservative
+  interruption recovery for Jellyfin 10.11.11 and qBittorrent 5.2.3.

@@ -5,7 +5,8 @@ Status: **passed on 2026-08-14**
 This report began as the Issue 001 compatibility spike and now also records the
 production qBittorrent client, physical journal, Stop Torrents, Alternative
 Limits, hosted Jellyfin playback coordination, administrator server API, and
-administrator dashboard evidence completed through Issue 009.
+administrator dashboard, real-player, interruption/outage, and release-package
+evidence completed through Issue 010.
 
 ## Pinned environment
 
@@ -119,6 +120,29 @@ An interrupted-journal fixture also proved that canceling the native recovery
 dialog made no request and returned focus, while accepting it sent exactly one
 administrator recovery command.
 
+Issue 010 extended the same pinned Chromium run through the actual Jellyfin web
+player. The browser opened the synthetic movie, paused the real video element,
+and QControl reported one qualifying paused session while enabling Alternative
+Limits and stopping/tagging the selected real `radarr` torrent. Resuming the
+four-second movie to natural completion produced an authoritative stopped
+session and normal one-second-grace restoration.
+
+The Issue 010 interruption contract then sent `SIGKILL` to the real Jellyfin
+container after both actions settled. The restarted plugin reported
+`RecoveryRequired`, observed zero surviving player sessions, and left all
+protected qBittorrent state unchanged until separate explicit speed and torrent
+recovery commands completed. It also stopped qBittorrent during a new
+acquisition and again after release grace began; both same-process paths
+retained durable intent and converged after qBittorrent restarted. The complete
+crash-point mapping is in
+[`interruption-and-outage-matrix.md`](interruption-and-outage-matrix.md).
+
+A clean Jellyfin instance also installed `0.1.0.0` through a temporary custom
+manifest served only on the internal fixture network, loaded the plugin as
+Active, and retained credential-free configuration across restart. Release
+tooling proved tag, assembly, ABI, package, immutable URL, MD5 manifest
+checksum, and SHA-256 asset agreement without creating a tag or release.
+
 ## qBittorrent authentication and reads
 
 The LinuxServer image requires the configured WebUI port to match the container
@@ -206,8 +230,10 @@ tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
 tests/fixtures/jellyfin-qcontrol-contract.test.sh
 tests/fixtures/jellyfin-dashboard-contract.test.sh
+tests/fixtures/jellyfin-interruption-contract.test.sh
 scripts/test-issue-008.sh
 scripts/test-issue-009.sh
+scripts/test-issue-010.sh
 ```
 
 `scripts/test-issue-001.sh` runs these together with restore, build, unit tests,
@@ -220,13 +246,12 @@ shell lint, and package verification.
   and replacement failures, and resolved the same sibling path shape already
   retained by the Jellyfin container restart fixture. Issue 005 then exercised
   that store at every Stop Torrents mutation boundary against the real fixture.
-- Issue 009 adds the administrator dashboard over the validated server API;
-  its isolated Chromium proof covers configuration and recovery at desktop and
-  narrow widths. Issue 008 continues to own revisioned configuration, active
-  snapshots, privacy-safe status, and explicit recovery semantics.
 - The credential source uses platform-native .NET file APIs without Unix path
   parsing, but a native Windows secret-file smoke cannot be claimed from this
-  Linux host. The Windows alpha procedure must verify a Jellyfin-service-readable,
-  ACL-protected key file before cross-platform readiness is claimed.
-- A real player smoke and alpha install/upgrade hardening remain in Issue 010;
-  the administrator browser smoke is complete.
+  Linux host. The Windows alpha procedure in `docs/RELEASE.md` verifies both
+  stored and secret-file modes with a Jellyfin-service-readable, ACL-protected
+  key file. Native Windows runtime evidence remains an explicit alpha
+  limitation.
+- This is the first candidate version, so there is no previous public package
+  against which to prove upgrade retention. That release-smoke row becomes
+  mandatory beginning with the second version.

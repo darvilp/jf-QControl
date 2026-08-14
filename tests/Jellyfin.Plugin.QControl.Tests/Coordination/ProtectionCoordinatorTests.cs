@@ -142,6 +142,51 @@ public sealed class ProtectionCoordinatorTests
         Assert.Equal(0, actions.RestorationCalls);
     }
 
+    [Theory]
+    [InlineData(ProtectionPhase.Protecting)]
+    [InlineData(ProtectionPhase.ReleasePending)]
+    [InlineData(ProtectionPhase.Restoring)]
+    public async Task InterruptedJournalNeverRestoresFromAnyActiveLifecyclePhase(
+        ProtectionPhase phase)
+    {
+        var events = new List<string>();
+        var now = new DateTimeOffset(2026, 8, 14, 12, 0, 0, TimeSpan.Zero);
+        var interrupted = TestActivationJournalFactory.CreateDocument(
+            processId: Guid.NewGuid(),
+            new PlaybackPresenceSnapshot(true, ["old-session"]),
+            now.AddHours(-1),
+            TimeSpan.FromSeconds(60)) with
+        {
+            Phase = phase,
+            ReleaseDueAt = phase == ProtectionPhase.ReleasePending
+                ? now.AddSeconds(-1)
+                : null,
+        };
+        var store = new RecordingJournalStore(events)
+        {
+            LoadResult = new ActivationJournalLoadResult(
+                ActivationJournalLoadStatus.Interrupted,
+                ActivationJournalAuthority.ProtectOnly,
+                interrupted),
+            Current = interrupted,
+        };
+        var actions = new RecordingProtectionActions(events) { RestorationSettled = true };
+        using var coordinator = new ProtectionCoordinator(
+            new MutableSessionSource(events) { Sessions = [] },
+            new TestActivationJournalFactory(),
+            actions,
+            store,
+            new ManualTimeProvider(now),
+            ProcessId);
+
+        var result = await coordinator.ReconcileAsync(CancellationToken.None);
+
+        Assert.True(result.RecoveryRequired);
+        Assert.Equal(0, actions.RestorationCalls);
+        Assert.Equal(0, store.DeleteCalls);
+        Assert.Same(interrupted, store.Current);
+    }
+
     [Fact]
     public async Task ZeroGraceRestoresOnFirstAuthoritativeAbsentSnapshot()
     {

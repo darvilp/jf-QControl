@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 const pluginId = 'ab18c878185648538f215028a1d5a7b2';
 
+test.describe.configure({ mode: 'serial' });
+
 async function signIn(page) {
     await page.goto('/web/');
     const username = page.getByRole('textbox', { name: /^user$/i });
@@ -19,6 +21,28 @@ async function openPluginConfiguration(page) {
     await expect(settings).toHaveAttribute('href', '#/configurationpage?name=QControl');
     await settings.click();
     await expect(page.locator('#qControlPage')).toBeVisible();
+}
+
+async function authenticateApi(request, deviceId) {
+    const response = await request.post('/Users/AuthenticateByName', {
+        headers: {
+            Authorization: `MediaBrowser Client="QControl Browser Contract", Device="Chromium", DeviceId="${deviceId}", Version="0.1.0.0"`
+        },
+        data: {
+            Username: process.env.QCONTROL_ADMIN_NAME,
+            Pw: process.env.QCONTROL_ADMIN_PASSWORD
+        }
+    });
+    expect(response.ok()).toBeTruthy();
+    return (await response.json()).AccessToken;
+}
+
+async function readStatus(request, token) {
+    const response = await request.get('/QControl/Status', {
+        headers: { 'X-Emby-Token': token }
+    });
+    expect(response.ok()).toBeTruthy();
+    return response.json();
 }
 
 test('administrator configures the real page without credential round-trip', async ({ page }) => {
@@ -57,6 +81,7 @@ test('administrator configures the real page without credential round-trip', asy
     await expect(page.locator('#qControlCategorySelection')).toBeVisible();
     await page.getByText('radarr', { exact: true }).click();
     await expect(page.getByLabel('radarr', { exact: true })).toBeChecked();
+    await page.locator('#qControlReleaseGraceSeconds').fill('1');
     await page.getByRole('button', { name: 'Save configuration' }).click();
     await expect(page.locator('#qControlConfigurationStatus')).toContainText(/configuration saved/i);
     await expect(page.locator('#qControlApiKey')).toHaveValue('');
@@ -101,4 +126,52 @@ test('manual recovery is inert until its native confirmation is accepted', async
     await page.getByRole('button', { name: 'Confirm recovery action' }).click();
     await expect(page.locator('#qControlRecoveryStatus')).toContainText(/completed/i);
     expect(recoveryRequests).toHaveLength(1);
+});
+
+test('real Jellyfin web player drives paused protection and normal release', async ({ page, request }) => {
+    const apiToken = await authenticateApi(request, 'qcontrol-browser-status');
+    const itemsResponse = await request.get('/Items?Recursive=true&IncludeItemTypes=Movie', {
+        headers: { 'X-Emby-Token': apiToken }
+    });
+    expect(itemsResponse.ok()).toBeTruthy();
+    const movie = (await itemsResponse.json()).Items[0];
+    expect(movie).toBeTruthy();
+
+    await signIn(page);
+    await page.goto(`/web/#/details?id=${movie.Id}`);
+    await expect(page.getByRole('heading', { name: movie.Name, exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /^play$/i }).first().click();
+
+    const video = page.locator('video').first();
+    await expect(video).toBeVisible();
+    await expect.poll(() => video.evaluate(element => element.paused)).toBe(false);
+    await video.evaluate(element => element.pause());
+    await expect.poll(() => video.evaluate(element => element.paused)).toBe(true);
+
+    await expect.poll(async () => {
+        const status = await readStatus(request, apiToken);
+        return {
+            state: (status.ProtectionState ?? status.protectionState).toLowerCase(),
+            sessions: status.QualifyingSessionCount ?? status.qualifyingSessionCount,
+            limits: status.AlternativeLimitsCurrentlyEnabled
+                ?? status.alternativeLimitsCurrentlyEnabled,
+            marked: status.MarkedTorrentCount ?? status.markedTorrentCount
+        };
+    }, { timeout: 45_000 }).toEqual({
+        state: 'protecting',
+        sessions: 1,
+        limits: true,
+        marked: 1
+    });
+
+    await video.evaluate(async element => {
+        await element.play();
+    });
+    await expect(page.getByRole('button', { name: /^play$/i }).first()).toBeVisible({
+        timeout: 10_000
+    });
+    await expect.poll(async () => {
+        const status = await readStatus(request, apiToken);
+        return (status.ProtectionState ?? status.protectionState).toLowerCase();
+    }, { timeout: 45_000 }).toBe('inactive');
 });

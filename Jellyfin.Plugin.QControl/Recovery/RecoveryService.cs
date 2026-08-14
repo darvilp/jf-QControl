@@ -19,6 +19,10 @@ namespace Jellyfin.Plugin.QControl.Recovery;
 /// </summary>
 public sealed class RecoveryService
 {
+    private const int MaxImmediateTorrentRestorationPasses = 5;
+    private static readonly TimeSpan TorrentRestorationReadbackDelay =
+        TimeSpan.FromMilliseconds(250);
+
     private readonly IActivationJournalStore _journalStore;
     private readonly ProcessInstanceIdentity _processIdentity;
     private readonly IPluginConfigurationPersistence _configuration;
@@ -26,6 +30,7 @@ public sealed class RecoveryService
     private readonly IProtectionExecutionGate _executionGate;
     private readonly IProtectionCoordinatorStateControl _coordinatorState;
     private readonly IProtectionWakeSignal _wakeSignal;
+    private readonly IReconciliationDelay _delay;
     private readonly TimeProvider _timeProvider;
 
     /// <summary>Initializes a new instance of the <see cref="RecoveryService"/> class.</summary>
@@ -36,6 +41,7 @@ public sealed class RecoveryService
     /// <param name="executionGate">The shared automatic/manual mutation gate.</param>
     /// <param name="coordinatorState">The coordinator journal-cache control.</param>
     /// <param name="wakeSignal">The post-recovery worker wake signal.</param>
+    /// <param name="delay">The bounded accepted-start read-back delay.</param>
     /// <param name="timeProvider">The manual recovery journal clock.</param>
     public RecoveryService(
         IActivationJournalStore journalStore,
@@ -45,6 +51,7 @@ public sealed class RecoveryService
         IProtectionExecutionGate executionGate,
         IProtectionCoordinatorStateControl coordinatorState,
         IProtectionWakeSignal wakeSignal,
+        IReconciliationDelay delay,
         TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(journalStore);
@@ -54,6 +61,7 @@ public sealed class RecoveryService
         ArgumentNullException.ThrowIfNull(executionGate);
         ArgumentNullException.ThrowIfNull(coordinatorState);
         ArgumentNullException.ThrowIfNull(wakeSignal);
+        ArgumentNullException.ThrowIfNull(delay);
         ArgumentNullException.ThrowIfNull(timeProvider);
         _journalStore = journalStore;
         _processIdentity = processIdentity;
@@ -62,6 +70,7 @@ public sealed class RecoveryService
         _executionGate = executionGate;
         _coordinatorState = coordinatorState;
         _wakeSignal = wakeSignal;
+        _delay = delay;
         _timeProvider = timeProvider;
     }
 
@@ -126,18 +135,39 @@ public sealed class RecoveryService
 
             var client = _clientFactory.Create(document.Endpoint);
             using var action = new StopTorrentsActionService(client, _journalStore);
-            document = await action
-                .ReconcileRestorationAsync(
-                    document,
-                    ActivationJournalAuthority.Full,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            if (TorrentsSettled(document) && AlternativeRecoverySettled(document))
+            for (var pass = 0; pass < MaxImmediateTorrentRestorationPasses; pass++)
             {
-                await _journalStore.DeleteAsync(cancellationToken).ConfigureAwait(false);
+                document = await action
+                    .ReconcileRestorationAsync(
+                        document,
+                        ActivationJournalAuthority.Full,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                if (!TorrentsSettled(document))
+                {
+                    if (pass + 1 < MaxImmediateTorrentRestorationPasses)
+                    {
+                        // The accepted start can remain stopped briefly while qBittorrent
+                        // moves it into a queued or active state.
+                        await _delay
+                            .WaitAsync(TorrentRestorationReadbackDelay, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+
+                    continue;
+                }
+
+                if (AlternativeRecoverySettled(document))
+                {
+                    await _journalStore.DeleteAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                return Finish(new RecoveryResult(RecoveryOutcome.Completed));
             }
 
-            return Finish(new RecoveryResult(RecoveryOutcome.Completed));
+            return Finish(new RecoveryResult(
+                RecoveryOutcome.Failed,
+                JournalFailureCode.InvalidResponse));
         }
         catch (QbittorrentClientException exception)
         {
