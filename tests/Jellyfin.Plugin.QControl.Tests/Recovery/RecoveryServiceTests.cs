@@ -71,6 +71,28 @@ public sealed class RecoveryServiceTests
     }
 
     [Fact]
+    public async Task ResumeMarkedAllowsSeveralReadbacksForAnAcceptedQueuedStart()
+    {
+        var events = new List<string>();
+        var store = new RecordingStore(events);
+        var qbit = new RecoveryQbittorrentClient(events)
+        {
+            Torrents = [Torrent("a", true, "jfStopped")],
+            DeferredStartReadbacks = 12,
+        };
+        using var gate = new ProtectionExecutionGate();
+        var service = CreateService(store, qbit, gate, new RecordingStateControl());
+
+        var result = await service.ResumeMarkedTorrentsAsync(CancellationToken.None);
+
+        Assert.Equal(RecoveryOutcome.Completed, result.Outcome);
+        Assert.Null(store.Current);
+        Assert.NotEmpty(qbit.StartCalls);
+        Assert.All(qbit.StartCalls, call => Assert.Equal(["a"], call));
+        Assert.Equal(["a"], Assert.Single(qbit.RemoveTagCalls));
+    }
+
+    [Fact]
     public async Task ResumeMarkedRetainsJournalWhenAcceptedStartNeverLeavesStoppedState()
     {
         var events = new List<string>();

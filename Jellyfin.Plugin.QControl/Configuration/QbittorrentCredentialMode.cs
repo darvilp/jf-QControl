@@ -8,10 +8,15 @@ public enum QbittorrentCredentialMode
     /// <summary>
     /// Read the key from Jellyfin plugin configuration storage.
     /// </summary>
-    StoredApiKey,
+    StoredApiKey = 0,
 
     /// <summary>
     /// Read the key from a platform-native file on every request.
     /// </summary>
-    SecretFile,
+    SecretFile = 1,
+
+    /// <summary>
+    /// Send no authorization header and rely on qBittorrent's configured authentication bypass.
+    /// </summary>
+    Unauthenticated = 2,
 }

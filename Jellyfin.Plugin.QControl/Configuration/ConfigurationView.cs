@@ -8,7 +8,7 @@ namespace Jellyfin.Plugin.QControl.Configuration;
 /// </summary>
 /// <param name="Revision">The current accepted revision.</param>
 /// <param name="QbittorrentBaseAddress">The qBittorrent Web UI base URL.</param>
-/// <param name="CredentialMode">The active credential source.</param>
+/// <param name="CredentialMode">The active authentication mode.</param>
 /// <param name="HasStoredApiKey">Whether a stored key exists.</param>
 /// <param name="SecretFilePath">The configured platform-native secret path.</param>
 /// <param name="ConnectionValidated">Whether this connection was successfully probed.</param>

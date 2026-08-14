@@ -20,9 +20,9 @@ public sealed class StoredApiKeyCredentialSource : IQbittorrentCredentialSource
     }
 
     /// <inheritdoc />
-    public ValueTask<QbittorrentApiKey> GetApiKeyAsync(CancellationToken cancellationToken)
+    public ValueTask<QbittorrentApiKey?> GetApiKeyAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return ValueTask.FromResult(_apiKey);
+        return ValueTask.FromResult<QbittorrentApiKey?>(_apiKey);
     }
 }

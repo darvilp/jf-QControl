@@ -59,7 +59,7 @@ export function buildConfigurationCandidate(editor) {
     return {
         ExpectedRevision: Number(editor.revision ?? 0),
         QbittorrentBaseAddress: String(editor.baseAddress ?? '').trim(),
-        CredentialMode: enumValue(editor.credentialMode, ['StoredApiKey', 'SecretFile'], 0),
+        CredentialMode: enumValue(editor.credentialMode, ['StoredApiKey', 'SecretFile', 'Unauthenticated'], 0),
         SecretFilePath: String(editor.secretFilePath ?? '').trim(),
         ApiKeyReplacement: String(editor.apiKeyReplacement ?? ''),
         ClearStoredApiKey: Boolean(editor.clearStoredApiKey),
@@ -157,7 +157,7 @@ export function formatOperationalStatus(status) {
     if (connectivity === 'Connected') {
         details.push(`Connected to qBittorrent ${applicationVersion ?? 'unknown'} (Web API ${webApiVersion ?? 'unknown'}).`);
     } else if (connectivity === 'Failed') {
-        details.push('qBittorrent is currently unreachable or rejected the configured credential.');
+        details.push('qBittorrent is currently unreachable or rejected the configured authentication.');
     } else {
         details.push('No validated qBittorrent connection is active.');
     }
@@ -283,7 +283,7 @@ function failureMessage(failure, fallback) {
         Credential: 'The API key or secret-file credential could not be read.',
         Timeout: 'qBittorrent did not respond before the request deadline.',
         Connection: 'The qBittorrent address could not be reached.',
-        Authentication: 'qBittorrent rejected the API key.',
+        Authentication: 'qBittorrent rejected the configured authentication.',
         InvalidResponse: 'qBittorrent returned an unexpected response.',
         UnsupportedVersion: 'This qBittorrent application or Web API version is not supported.',
         JournalPersistence: 'QControl could not persist its recovery journal.'
@@ -388,7 +388,10 @@ export default function createPageController(view) {
     }
 
     function updateEditorState() {
-        const credentialMode = enumValue(query('#qControlCredentialMode').value, ['StoredApiKey', 'SecretFile'], 0);
+        const credentialMode = enumValue(
+            query('#qControlCredentialMode').value,
+            ['StoredApiKey', 'SecretFile', 'Unauthenticated'],
+            0);
         setHidden('#qControlStoredCredential', credentialMode !== 0);
         setHidden('#qControlSecretCredential', credentialMode !== 1);
         const selectedScope = enumValue(query('#qControlStopScope').value, ['All', 'SelectedCategories'], 0) === 1;
@@ -406,7 +409,7 @@ export default function createPageController(view) {
         query('#qControlBaseAddress').value = String(property(configuration, 'QbittorrentBaseAddress', '') ?? '');
         query('#qControlCredentialMode').value = String(enumValue(
             property(configuration, 'CredentialMode', 0),
-            ['StoredApiKey', 'SecretFile'],
+            ['StoredApiKey', 'SecretFile', 'Unauthenticated'],
             0));
         const apiKeyInput = query('#qControlApiKey');
         apiKeyInput.value = '';
@@ -534,7 +537,7 @@ export default function createPageController(view) {
         }
 
         if (outcomeEquals(outcome, 'ActiveConnectionConflict')) {
-            return 'The qBittorrent address or credential source cannot change during an active protection session.';
+            return 'The qBittorrent address or authentication mode cannot change during an active protection session.';
         }
 
         if (outcomeEquals(outcome, 'ConnectionFailed')) {

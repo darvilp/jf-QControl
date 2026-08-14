@@ -1,7 +1,7 @@
 ---
 name: "QControl"
 guid: "ab18c878-1856-4853-8f21-5028a1d5a7b2"
-version: "0.1.0.0"
+version: "0.1.0.1"
 targetAbi: "10.11.11.0"
 framework: "net9.0"
 owner: "darvilp"
@@ -14,6 +14,6 @@ artifacts:
   - "Jellyfin.Plugin.QControl.Domain.dll"
   - "Jellyfin.Plugin.QControl.dll"
 changelog: >
-  First alpha candidate with playback-driven Alternative Limits and journaled
-  explicit-torrent control, administrator configuration, and conservative
-  interruption recovery for Jellyfin 10.11.11 and qBittorrent 5.2.3.
+  Adds explicit unauthenticated Web API access for qBittorrent installations
+  that bypass authentication for Jellyfin's localhost or trusted-subnet
+  address, and allows queued starts more time to settle during manual recovery.

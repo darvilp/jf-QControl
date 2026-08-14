@@ -377,6 +377,45 @@ test('connection test sends a write-only replacement while switching to a native
     assert.equal('QbittorrentApiKey' in request.body, false);
 });
 
+test('administrator can test an explicit unauthenticated connection without credential inputs', async () => {
+    const html = await readFile(new URL(
+        '../../Jellyfin.Plugin.QControl/Configuration/configPage.html',
+        import.meta.url), 'utf8');
+    const { calls, view } = createHarness(async (path, method) => {
+        if (path === 'QControl/Configuration' && method === 'GET') {
+            return configuration({ CredentialMode: 'Unauthenticated' });
+        }
+
+        if (path === 'QControl/Status') {
+            return operationalStatus();
+        }
+
+        if (path === 'QControl/Connection/Categories') {
+            return { IsConnected: true, Categories: [] };
+        }
+
+        if (path === 'QControl/Connection/Test') {
+            return { IsConnected: true, Categories: [] };
+        }
+
+        return {};
+    });
+
+    await view.dispatch('viewshow');
+
+    assert.match(html, /<option value="2">No authentication/);
+    assert.equal(view.querySelector('#qControlCredentialMode').value, '2');
+    assert.equal(view.querySelector('#qControlStoredCredential').hidden, true);
+    assert.equal(view.querySelector('#qControlSecretCredential').hidden, true);
+
+    await view.dispatch('click', view.querySelector('[data-action="test-connection"]'));
+
+    const request = calls.find(call => call.path === 'QControl/Connection/Test');
+    assert.equal(request.body.CredentialMode, 2);
+    assert.equal(request.body.ApiKeyReplacement, '');
+    assert.equal(request.body.SecretFilePath, '');
+});
+
 test('recovery requires the native confirmation dialog before the server command', async () => {
     const { calls, view } = createHarness(async (path, method) => {
         if (path === 'QControl/Configuration' && method === 'GET') {

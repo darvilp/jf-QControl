@@ -292,9 +292,13 @@ public sealed class QbittorrentClient : IQbittorrentClient
             using var request = new HttpRequestMessage(
                 method,
                 _options.ResolveApiPath(string.Concat("api/v2/", endpoint)));
-            request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer",
-                apiKey.RevealForAuthorizationHeader());
+            if (apiKey is not null)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue(
+                    "Bearer",
+                    apiKey.RevealForAuthorizationHeader());
+            }
+
             if (form is not null)
             {
                 request.Content = new FormUrlEncodedContent(form);
@@ -379,7 +383,7 @@ public sealed class QbittorrentClient : IQbittorrentClient
         {
             throw new QbittorrentClientException(
                 QbittorrentClientError.Authentication,
-                "qBittorrent rejected the configured API key.");
+                "qBittorrent rejected the configured authentication mode.");
         }
 
         throw new QbittorrentClientException(

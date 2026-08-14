@@ -12,6 +12,6 @@ public interface IQbittorrentCredentialSource
     /// Resolves the current key for one bounded request.
     /// </summary>
     /// <param name="cancellationToken">The request cancellation token.</param>
-    /// <returns>The opaque validated API key.</returns>
-    ValueTask<QbittorrentApiKey> GetApiKeyAsync(CancellationToken cancellationToken);
+    /// <returns>The opaque validated API key, or <see langword="null"/> for an explicitly unauthenticated request.</returns>
+    ValueTask<QbittorrentApiKey?> GetApiKeyAsync(CancellationToken cancellationToken);
 }

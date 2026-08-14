@@ -74,7 +74,8 @@ pinned qBittorrent container.
 
 Cover:
 
-- bearer authorization on every allowed request;
+- bearer authorization in API-key modes and no authorization header in explicit
+  unauthenticated mode;
 - application and Web API version negotiation;
 - deterministic Alternative Limits get/set;
 - torrent/category reads;
@@ -292,6 +293,7 @@ contains the API key or secret-file contents.
 | Failure | Partial tag batch does not stop unmarked hashes |
 | Failure | Partial start retains Marker Tag on unresolved hashes |
 | Security | API key uses bearer header, never query string |
+| Security | Explicit unauthenticated mode sends no authorization header |
 | Security | URL user-info is rejected |
 | Security | TLS certificate failures are not bypassed |
 | Security | Custom APIs reject non-administrators |
@@ -330,7 +332,8 @@ Before production adapters are trusted, record exact results in
 2. Jellyfin event subscriptions and current-session snapshots match source
    research for playing, paused, stopped, disconnected, and overlapping clients.
 3. Plugin configuration and journal paths persist across server restart.
-4. qBittorrent accepts API-key authentication from Jellyfin's HTTP client.
+4. qBittorrent accepts API-key authentication and an explicit no-header request
+   from a narrowly whitelisted Jellyfin source address.
 5. Version endpoints return the expected application and Web API versions.
 6. Deterministic Alternative Limits setter reaches the requested state.
 7. Torrent listing exposes hash, category, tags, remaining content, and stopped
@@ -339,9 +342,10 @@ Before production adapters are trusted, record exact results in
 9. Queue promotion is reproduced with local fixtures.
 10. An accepted start that remains queued is distinguishable from stopped.
 11. Category and tag names with spaces and non-ASCII characters round-trip.
-12. Stored and file-based keys work on Linux/container paths; Windows behavior
-    has unit coverage and a documented native smoke procedure if CI lacks a
-    Windows Jellyfin runtime.
+12. Stored and file-based keys work on Linux/container paths, and explicit
+    unauthenticated mode works for a whitelisted Jellyfin container address;
+    Windows behavior has unit coverage and a documented native smoke procedure
+    if CI lacks a Windows Jellyfin runtime.
 13. API-key bootstrap uses only fixture credentials, writes an ephemeral secret
     file, and never exposes either credential in retained output.
 

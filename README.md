@@ -32,7 +32,8 @@ The current alpha targets Jellyfin `10.11.11`; review the
 
 - Jellyfin 10.11 plugin running in-process with the server.
 - One qBittorrent 5.2+ Web API endpoint.
-- API-key authentication from plugin configuration or an external secret file.
+- Explicit authentication using a stored API key, a secret-file key, or
+  qBittorrent's preconfigured localhost/trusted-subnet bypass.
 - Playing and paused Jellyfin sessions both count as playback presence.
 - Immediate protection and a 60-second default release grace.
 - Independent Alternative Limits and Stop Torrents actions.

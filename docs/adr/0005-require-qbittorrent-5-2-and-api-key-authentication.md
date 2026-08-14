@@ -1,5 +1,6 @@
 ---
-status: accepted
+status: superseded
+superseded-by: 0006-support-explicit-qbittorrent-authentication-bypass.md
 ---
 
 # Require qBittorrent 5.2 and API-key authentication

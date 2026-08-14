@@ -28,7 +28,7 @@ public sealed class SecretFileCredentialSource : IQbittorrentCredentialSource
     }
 
     /// <inheritdoc />
-    public async ValueTask<QbittorrentApiKey> GetApiKeyAsync(
+    public async ValueTask<QbittorrentApiKey?> GetApiKeyAsync(
         CancellationToken cancellationToken)
     {
         try

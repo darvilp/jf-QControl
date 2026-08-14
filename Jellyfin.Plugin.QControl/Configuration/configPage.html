@@ -46,12 +46,17 @@
                     </div>
 
                     <div class="selectContainer">
-                        <label class="selectLabel" for="qControlCredentialMode">Credential source</label>
+                        <label class="selectLabel" for="qControlCredentialMode">Authentication</label>
                         <select is="emby-select" id="qControlCredentialMode"
                                 class="emby-select-withcolor emby-select">
                             <option value="0">API key saved in Jellyfin</option>
                             <option value="1">API key read from a file</option>
+                            <option value="2">No authentication (qBittorrent bypass)</option>
                         </select>
+                        <div class="fieldDescription">
+                            Use no authentication only when qBittorrent explicitly bypasses authentication for the
+                            Jellyfin server address.
+                        </div>
                     </div>
 
                     <div id="qControlStoredCredential" class="inputContainer">

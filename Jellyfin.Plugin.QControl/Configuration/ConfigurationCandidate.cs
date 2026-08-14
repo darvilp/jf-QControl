@@ -14,7 +14,7 @@ public sealed class ConfigurationCandidate
     /// <summary>Gets or sets the qBittorrent Web UI base URL.</summary>
     public string QbittorrentBaseAddress { get; set; } = string.Empty;
 
-    /// <summary>Gets or sets the selected credential source.</summary>
+    /// <summary>Gets or sets the selected authentication mode.</summary>
     public QbittorrentCredentialMode CredentialMode { get; set; }
 
     /// <summary>Gets or sets the secret-file path.</summary>

@@ -160,6 +160,15 @@ key.
 Read-only probes successfully returned application version, Web API version,
 Alternative Limits state, categories, tags, and torrent information.
 
+The `0.1.0.1` packaged-plugin contract additionally enabled qBittorrent's
+authentication-bypass whitelist for only the Jellyfin container's observed
+`/32` source address. An administrator connection test in explicit
+unauthenticated mode read application `5.2.3`, Web API `2.15.1`, and categories
+without an `Authorization` header. The fixture then disabled bypass before
+running the established secret-file protection and recovery sequence. The same
+run confirmed that manual recovery tolerates a qBittorrent accepted start that
+remains observably stopped beyond the previous 1.25-second readback window.
+
 Issue 003 then ran the production typed client against the same container using
 the mode-`0600` secret file. The adapter accepted application `5.2.3` and Web
 API `2.15.1`, returned only neutral policy fields (hash, category, bytes

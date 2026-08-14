@@ -39,6 +39,32 @@ public sealed class QbittorrentClientHttpTests
     }
 
     [Fact]
+    public async Task ExplicitUnauthenticatedModeSendsNoAuthorizationHeader()
+    {
+        using var handler = new RecordingHandler((_, _) => Task.FromResult(
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("v5.2.3"),
+            }));
+        using var httpClient = new HttpClient(handler);
+        var client = new QbittorrentClient(
+            httpClient,
+            new QbittorrentConnectionOptions(
+                new Uri("http://qbit.internal"),
+                TimeSpan.FromSeconds(5)),
+            new UnauthenticatedCredentialSource());
+
+        var version = await client
+            .GetApplicationVersionAsync(CancellationToken.None)
+            .ConfigureAwait(true);
+
+        Assert.Equal("v5.2.3", version);
+        var request = Assert.Single(handler.Requests);
+        Assert.Null(request.AuthorizationScheme);
+        Assert.Null(request.AuthorizationParameter);
+    }
+
+    [Fact]
     public async Task RequestTimeoutProducesBoundedSecretSafeFailure()
     {
         using var handler = new RecordingHandler(async (_, cancellationToken) =>

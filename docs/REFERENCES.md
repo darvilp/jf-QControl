@@ -16,6 +16,7 @@ will be pinned separately under `docs/compatibility/` during Issue 001.
 - [qBittorrent 5.2.3 release](https://github.com/qbittorrent/qBittorrent/releases/tag/release-5.2.3)
 - [qBittorrent 5 WebUI API](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29)
 - [API-key authentication for qBittorrent 5.2+](https://github.com/qbittorrent/qBittorrent/wiki/API-Key-Authentication-%28%E2%89%A5v5.2.0%29)
+- [Web API preferences documenting localhost and subnet authentication bypass](https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29#get-application-preferences)
 - [Deterministic Alternative Limits implementation in 5.2.3](https://github.com/qbittorrent/qBittorrent/blob/0b63c3d17373f6132ea211c9dcd4241284ccdfaf/src/webui/api/transfercontroller.cpp#L90-L146)
 - [Torrent start/stop implementation in 5.2.3](https://github.com/qbittorrent/qBittorrent/blob/0b63c3d17373f6132ea211c9dcd4241284ccdfaf/src/webui/api/torrentscontroller.cpp#L1429-L1446)
 

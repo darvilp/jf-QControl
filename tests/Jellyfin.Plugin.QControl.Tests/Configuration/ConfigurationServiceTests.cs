@@ -96,6 +96,25 @@ public sealed class ConfigurationServiceTests
     }
 
     [Fact]
+    public async Task EnabledActionsAcceptExplicitUnauthenticatedModeAfterConnectionProbe()
+    {
+        var persistence = new RecordingPersistence(ValidCurrent());
+        var probe = new RecordingConnectionProbe();
+        using var service = CreateService(persistence, probe);
+        var candidate = CandidateFrom(persistence.Current);
+        candidate.CredentialMode = QbittorrentCredentialMode.Unauthenticated;
+
+        var result = await service.SaveAsync(candidate, CancellationToken.None);
+
+        Assert.Equal(ConfigurationSaveOutcome.Accepted, result.Outcome);
+        Assert.Equal(QbittorrentCredentialMode.Unauthenticated, persistence.Current.CredentialMode);
+        Assert.Equal(FirstKey, persistence.Current.QbittorrentApiKey);
+        Assert.True(persistence.Current.ConnectionValidated);
+        Assert.Equal(1, probe.Calls);
+        Assert.Equal(QbittorrentCredentialMode.Unauthenticated, probe.LastCandidate?.CredentialMode);
+    }
+
+    [Fact]
     public async Task BlankReplacementRetainsStoredKeyAndExplicitReplacementReconnects()
     {
         var persistence = new RecordingPersistence(ValidCurrent());

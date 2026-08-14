@@ -108,6 +108,36 @@ admin_token="$(<"${token_file}")"
 api_key="$(<"${api_key_file}")"
 test "$(api_status GET QControl/Configuration)" = '401'
 
+jellyfin_ip="$(docker inspect qcontrol-test-jellyfin \
+    | jq --exit-status --raw-output \
+        '.[0].NetworkSettings.Networks | to_entries[]
+         | select(.key | endswith("_testnet")) | .value.IPAddress')"
+test -n "${jellyfin_ip}"
+bypass_preferences="$(jq --null-input \
+    --arg subnet "${jellyfin_ip}/32" \
+    '{bypass_auth_subnet_whitelist_enabled:true,bypass_auth_subnet_whitelist:$subnet}')"
+qbit_post app/setPreferences --data-urlencode "json=${bypass_preferences}"
+qbit_get app/preferences \
+    | jq --exit-status \
+        --arg subnet "${jellyfin_ip}/32" \
+        '.bypass_auth_subnet_whitelist_enabled == true
+         and .bypass_auth_subnet_whitelist == $subnet' >/dev/null
+
+unauthenticated_candidate="$(jq --null-input \
+    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:2,secretFilePath:"",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:false,stopTorrentsEnabled:false,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"jfStopped",neverTouchTag:"jfNeverTouch",releaseGraceSeconds:1}')"
+unauthenticated_test="$(curl --fail --silent --show-error \
+    --request POST \
+    --header "X-Emby-Token: ${admin_token}" \
+    --header 'Content-Type: application/json' \
+    --data "${unauthenticated_candidate}" \
+    "${server_url}/QControl/Connection/Test")"
+jq --exit-status \
+    '(.isConnected // .IsConnected) == true
+     and (.applicationVersion // .ApplicationVersion) == "5.2.3"' \
+    <<<"${unauthenticated_test}" >/dev/null
+qbit_post app/setPreferences \
+    --data-urlencode 'json={"bypass_auth_subnet_whitelist_enabled":false,"bypass_auth_subnet_whitelist":""}'
+
 regular_user="$(curl --fail --silent --show-error \
     --request POST \
     --header "X-Emby-Token: ${admin_token}" \

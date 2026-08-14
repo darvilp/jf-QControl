@@ -60,6 +60,8 @@ public sealed class ConfiguredQbittorrentClientFactory : IQbittorrentClientFacto
                     new StoredApiKeyCredentialSource(credentialConfiguration.QbittorrentApiKey),
                 QbittorrentCredentialMode.SecretFile =>
                     new SecretFileCredentialSource(credentialConfiguration.SecretFilePath),
+                QbittorrentCredentialMode.Unauthenticated =>
+                    new UnauthenticatedCredentialSource(),
                 _ => throw new InvalidOperationException("Unknown qBittorrent credential mode."),
             };
         return new QbittorrentClient(

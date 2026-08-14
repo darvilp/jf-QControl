@@ -1,7 +1,7 @@
 # Release preparation
 
-QControl uses four-component plugin versions such as `0.1.0.0` and matching
-tags such as `v0.1.0.0`.
+QControl uses four-component plugin versions such as `0.1.0.1` and matching
+tags such as `v0.1.0.1`.
 
 ## Install from the Jellyfin catalog
 
@@ -14,8 +14,8 @@ https://raw.githubusercontent.com/darvilp/jf-QControl/manifest/manifest.json
 1. In Jellyfin, open **Dashboard > Plugins > Repositories**.
 2. Add a repository named `QControl` with the URL above and save it.
 3. Open **Catalog**, select QControl, install the alpha, and restart Jellyfin.
-4. Confirm **Dashboard > Plugins > My Plugins > QControl** shows the expected
-   version as Active.
+4. Confirm **Dashboard > Plugins > My Plugins > QControl** shows version
+   `0.1.0.1` as Active.
 5. Open **Dashboard > Plugins > QControl**, configure and test the qBittorrent
    connection, enable at least one action, and save.
 
@@ -32,15 +32,28 @@ catalog prevents Jellyfin from seeing an install entry with a dead download.
    directory. `meta.json` describes the package and does not need to be copied
    for a manual install.
 4. Start Jellyfin. Confirm **Dashboard > Plugins > My Plugins > QControl** shows
-   version `0.1.0.0` as Active.
+   version `0.1.0.1` as Active.
 5. Open **Dashboard > Plugins > QControl**, configure the qBittorrent endpoint
-   and one credential source, test the connection, select at least one action,
+   and one authentication mode, test the connection, select at least one action,
    and save.
 
 Keep a copy of the exact ZIP and its `.sha256` companion. Alpha removal should
 be performed with Jellyfin stopped. If a QControl recovery warning is present,
 resolve or intentionally mark that journal resolved before removing the
 plugin; otherwise qBittorrent may remain protected by design.
+
+## qBittorrent authentication
+
+QControl supports a stored API key, an API key read from a secret file, or an
+explicit **No authentication** mode. No-auth mode sends no authorization header
+and works only when qBittorrent already bypasses authentication for Jellyfin's
+source address. QControl does not alter qBittorrent's bypass settings.
+
+For native installs where both services share a host, qBittorrent's localhost
+bypass may apply when QControl connects to a loopback address. Separate
+containers do not share localhost; configure the narrowest practical trusted
+subnet or exact source address. Do not expose a bypassed Web UI to an untrusted
+network.
 
 ## qBittorrent credential files
 
@@ -72,7 +85,7 @@ On Windows:
 
 The path construction and platform-neutral file APIs have automated coverage,
 but this Linux-hosted project does not claim a native Windows Jellyfin runtime
-smoke for `0.1.0.0`. Record the Jellyfin service account, Windows/Jellyfin
+smoke for `0.1.0.1`. Record the Jellyfin service account, Windows/Jellyfin
 versions, both connection-test outcomes, and restart-retention result when the
 procedure is run. Do not record the API key or include it in screenshots.
 
@@ -82,8 +95,8 @@ The local preparation path is read-only with respect to GitHub:
 
 ```bash
 artifact="$(scripts/package.sh | tail -n 1)"
-scripts/verify-release-contract.sh v0.1.0.0 "${artifact}"
-scripts/prepare-release-assets.sh v0.1.0.0 "${artifact}" artifacts/release
+scripts/verify-release-contract.sh v0.1.0.1 "${artifact}"
+scripts/prepare-release-assets.sh v0.1.0.1 "${artifact}" artifacts/release
 scripts/test-manifest-install.sh "${artifact}"
 scripts/test-issue-010.sh
 ```

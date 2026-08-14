@@ -19,7 +19,7 @@ namespace Jellyfin.Plugin.QControl.Recovery;
 /// </summary>
 public sealed class RecoveryService
 {
-    private const int MaxImmediateTorrentRestorationPasses = 5;
+    private const int MaxImmediateTorrentRestorationPasses = 20;
     private static readonly TimeSpan TorrentRestorationReadbackDelay =
         TimeSpan.FromMilliseconds(250);
 

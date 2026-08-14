@@ -54,7 +54,8 @@ control. Playback returning during grace cancels the release.
 V1 targets:
 
 - Jellyfin 10.11, with an exact supported ABI recorded by each plugin package;
-- qBittorrent 5.2 or newer with Web API-key authentication;
+- qBittorrent 5.2 or newer with API-key authentication or a preconfigured
+  localhost/trusted-subnet authentication bypass;
 - one qBittorrent endpoint reachable from the Jellyfin process;
 - HTTP on a trusted LAN/container network or HTTPS with normal certificate
   validation.
@@ -325,7 +326,7 @@ V1 configuration contains:
 | Area | Setting |
 |---|---|
 | Connection | qBittorrent base URL |
-| Authentication | stored API key or secret-file path |
+| Authentication | stored API key, secret-file path, or explicit no-header mode |
 | Action | enable Alternative Limits |
 | Action | enable Stop Torrents |
 | Scope | all torrents or selected categories |
@@ -351,12 +352,13 @@ Release grace: 60 seconds
 
 Configuration validation occurs server-side. The embedded administrator page
 does not duplicate policy rules in JavaScript. A valid connection test verifies
-authentication and compatible application/Web API versions without changing
-qBittorrent.
+the selected authentication mode and compatible application/Web API versions
+without changing qBittorrent.
 
-## 9. Credential handling
+## 9. Authentication and credential handling
 
-V1 uses qBittorrent's bearer API key. It supports two sources:
+V1 supports three explicit authentication modes. It never falls back from a
+rejected or missing key to an unauthenticated request.
 
 ### 9.1 Stored key
 
@@ -371,7 +373,16 @@ with a Windows ACL-protected file, a native Unix file, a Docker secret, or
 another read-only mounted secret. The file contents are never copied to the
 journal or returned to the browser.
 
-### 9.3 Dashboard and diagnostics
+### 9.3 Authentication bypass
+
+QControl sends no `Authorization` header. This mode is usable only when
+qBittorrent already bypasses authentication for the Jellyfin process's source
+address through its localhost or subnet-whitelist setting. QControl does not
+change those qBittorrent preferences. In separate containers, localhost is not
+shared; prefer an exact Jellyfin container address or the narrowest stable
+trusted subnet.
+
+### 9.4 Dashboard and diagnostics
 
 - A saved key is represented only as configured/not configured.
 - A blank replacement field retains the current stored value.
@@ -451,7 +462,8 @@ Responsibilities:
 Responsibilities:
 
 - observe Jellyfin sessions and events;
-- authenticate and call the narrow qBittorrent Web API allowlist;
+- apply the selected authentication mode and call the narrow qBittorrent Web
+  API allowlist;
 - atomically persist the journal;
 - load and validate plugin configuration;
 - expose administrator-only configuration and status endpoints.
@@ -491,8 +503,9 @@ The tree is guidance, not a fixed class-level design.
 
 ## 12. Security and operational boundaries
 
-- The qBittorrent key is effectively administrative and is used only through a
-  hardcoded endpoint allowlist.
+- A qBittorrent key is effectively administrative, and authentication bypass
+  grants equivalent access to trusted source addresses. QControl uses only a
+  hardcoded endpoint allowlist in either case.
 - QControl never adds, deletes, moves, renames, or rechecks torrent content.
 - QControl never changes qBittorrent application preferences other than the
   selected Alternative Limits mode.
@@ -500,7 +513,7 @@ The tree is guidance, not a fixed class-level design.
 - All HTTP calls use bounded timeouts and cancellation.
 - Normal logs contain counts, hashes only when needed for administrator
   diagnosis, and redacted errors; they exclude media and torrent names.
-- The plugin remains inert on invalid configuration, failed authentication, or
+- The plugin remains inert on invalid configuration, rejected authentication, or
   incompatible qBittorrent versions.
 - Network or qBittorrent failure never implies absence of Jellyfin playback.
 
@@ -553,9 +566,11 @@ The tree is guidance, not a fixed class-level design.
 
 ### Administration
 
-- Connection testing validates authentication and compatibility without writes.
+- Connection testing validates the selected authentication mode and
+  compatibility without writes.
 - Configuration and status are administrator-only.
-- Stored and file-based credentials work on Windows and Linux paths.
+- Stored, file-based, and explicit unauthenticated modes work through the same
+  configuration and connection-test contract.
 - Status explains which condition is keeping protection active.
 
 ### Distribution

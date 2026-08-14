@@ -33,7 +33,7 @@ fi
 if ! unzip -p "${artifact_path}" meta.json | jq --exit-status \
     '.name == "QControl"
      and .guid == "ab18c878-1856-4853-8f21-5028a1d5a7b2"
-     and .version == "0.1.0.0"
+     and .version == "0.1.0.1"
      and .targetAbi == "10.11.11.0"' >/dev/null; then
     printf 'Package metadata does not match the pinned plugin contract.\n' >&2
     exit 1

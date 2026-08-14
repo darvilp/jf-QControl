@@ -26,7 +26,7 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     public string QbittorrentBaseAddress { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the active credential source.
+    /// Gets or sets the active authentication mode.
     /// </summary>
     public QbittorrentCredentialMode CredentialMode { get; set; } =
         QbittorrentCredentialMode.StoredApiKey;
