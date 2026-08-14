@@ -30,6 +30,11 @@ jobs:
       - name: Restore
         run: dotnet restore Jellyfin.Plugin.QControl.sln
 
+      - name: Test administrator UI
+        run: |
+          node --check --experimental-default-type=module Jellyfin.Plugin.QControl/Configuration/configPage.js
+          node --test --experimental-default-type=module tests/ui/configPage.test.js
+
       - name: Build
         run: dotnet build Jellyfin.Plugin.QControl.sln --configuration Release --no-restore
 

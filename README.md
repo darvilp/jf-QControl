@@ -10,8 +10,10 @@ package tooling, isolated Jellyfin/qBittorrent compatibility fixtures,
 journaled Stop Torrents and Alternative Limits action slices, and the hosted
 Jellyfin playback coordinator. Administrator-only server APIs now validate and
 activate configuration, report privacy-safe operational state, and provide
-explicit recovery operations. A new installation remains deliberately inert
-until a connection test succeeds and an action is enabled.
+explicit recovery operations. The embedded administrator dashboard exposes
+those contracts through native, responsive Jellyfin controls without reading
+stored credential content. A new installation remains deliberately inert until
+a connection test succeeds and an action is enabled.
 
 ## V1 direction
 
@@ -51,6 +53,7 @@ scripts/test-issue-005.sh
 scripts/test-issue-006.sh
 scripts/test-issue-007.sh
 scripts/test-issue-008.sh
+scripts/test-issue-009.sh
 ```
 
 The issue gates run the Docker compatibility suite and use only the
@@ -63,6 +66,10 @@ connection validation, category discovery, both enabled actions, live status,
 credential-free journaling, grace release, and exact restoration through the
 packaged plugin. QControl uses loopback ports `18196` and `18180`, so the
 TagSync fixture can remain running on `18096`.
+Issue 009 adds controller/unit checks, served-resource verification, and a
+containerized Chromium smoke of the real administrator page: connection,
+configuration, recovery confirmation, keyboard focus order, credential
+non-round-trip, and narrow-layout overflow.
 
 ## License
 

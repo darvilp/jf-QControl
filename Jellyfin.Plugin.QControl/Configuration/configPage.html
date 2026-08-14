@@ -1,11 +1,307 @@
 <div data-role="page" id="qControlPage"
-     class="page type-interior pluginConfigurationPage fullWidthContent">
-    <div class="content-primary">
-        <div class="verticalSection">
+     class="page type-interior pluginConfigurationPage fullWidthContent"
+     data-controller="__plugin/QControl.js">
+    <div class="content-primary qControlContent">
+        <header class="verticalSection qControlIntroduction">
             <h2 class="sectionTitle">QControl</h2>
             <p class="fieldDescription">
-                Configuration will be available in a later alpha implementation slice.
+                Reduce qBittorrent activity while media is open in a Jellyfin player. Playing and paused players both
+                count as playback presence; the server owns every protection, restoration, and validation decision.
             </p>
-        </div>
+        </header>
+
+        <div id="qControlPageAnnouncement" class="qControlVisuallyHidden" aria-live="polite" aria-atomic="true"></div>
+
+        <section id="qControlOperationalStatus" class="verticalSection qControlCard"
+                 aria-labelledby="qControlOperationalStatusTitle">
+            <div class="qControlSectionHeading">
+                <div>
+                    <h2 id="qControlOperationalStatusTitle" class="sectionTitle">Current status</h2>
+                    <p class="fieldDescription">Playback presence and privacy-safe qBittorrent state from the server.</p>
+                </div>
+                <button is="emby-button" type="button" class="raised button" data-action="refresh-status">
+                    <span>Refresh status</span>
+                </button>
+            </div>
+            <div id="qControlStatusSummary" class="qControlStatusPanel" role="status" tabindex="-1">
+                <p>Loading current status…</p>
+            </div>
+        </section>
+
+        <form id="qControlConfigurationForm" novalidate inert aria-busy="true">
+            <div class="qControlGrid">
+                <section id="qControlConnection" class="verticalSection qControlCard"
+                         aria-labelledby="qControlConnectionTitle">
+                    <h2 id="qControlConnectionTitle" class="sectionTitle">qBittorrent connection</h2>
+                    <p class="fieldDescription">
+                        QControl supports one qBittorrent 5.2+ Web API endpoint. HTTP is suitable for a trusted LAN or
+                        container network; HTTPS uses normal certificate validation.
+                    </p>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="qControlBaseAddress">Web UI address</label>
+                        <input is="emby-input" id="qControlBaseAddress" type="url"
+                               placeholder="http://qbittorrent:8080" autocomplete="url" />
+                        <div class="fieldDescription">Use the address reachable from the Jellyfin server.</div>
+                    </div>
+
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="qControlCredentialMode">Credential source</label>
+                        <select is="emby-select" id="qControlCredentialMode"
+                                class="emby-select-withcolor emby-select">
+                            <option value="0">API key saved in Jellyfin</option>
+                            <option value="1">API key read from a file</option>
+                        </select>
+                    </div>
+
+                    <div id="qControlStoredCredential" class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="qControlApiKey">API key</label>
+                        <input is="emby-input" id="qControlApiKey" type="password"
+                               value="" autocomplete="new-password" spellcheck="false" />
+                        <div id="qControlApiKeyHelp" class="fieldDescription">
+                            Paste a qBittorrent API key. Existing key content is never returned to this page.
+                        </div>
+                    </div>
+
+                    <div id="qControlSecretCredential" class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="qControlSecretFilePath">API-key file path</label>
+                        <input is="emby-input" id="qControlSecretFilePath" type="text"
+                               autocomplete="off" spellcheck="false" />
+                        <div class="fieldDescription">
+                            Enter a native path readable by the Jellyfin service account, on Linux or Windows.
+                        </div>
+                    </div>
+
+                    <div id="qControlClearStoredKeyContainer"
+                         class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" id="qControlClearStoredKey" type="checkbox" />
+                            <span>Clear the API key currently saved in Jellyfin</span>
+                        </label>
+                        <div class="fieldDescription">
+                            Explicitly removes only the stored copy. File-based credentials are not changed.
+                        </div>
+                    </div>
+
+                    <div class="qControlActions">
+                        <button is="emby-button" type="button" class="raised button"
+                                data-action="test-connection">
+                            <span>Test connection</span>
+                        </button>
+                    </div>
+                    <div id="qControlConnectionStatus" class="qControlInlineStatus" aria-live="polite"></div>
+                </section>
+
+                <section id="qControlProtection" class="verticalSection qControlCard"
+                         aria-labelledby="qControlProtectionTitle">
+                    <h2 id="qControlProtectionTitle" class="sectionTitle">Playback protection</h2>
+                    <p class="fieldDescription">
+                        Alternative Limits and Stop Torrents are independent. Both disabled is a safe, inert
+                        configuration.
+                    </p>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" id="qControlAlternativeLimitsEnabled" type="checkbox" />
+                            <span>Use qBittorrent Alternative Limits during playback</span>
+                        </label>
+                        <div class="fieldDescription">
+                            Configure the alternate upload and download values in qBittorrent; QControl changes only
+                            the mode.
+                        </div>
+                    </div>
+
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input is="emby-checkbox" id="qControlStopTorrentsEnabled" type="checkbox" />
+                            <span>Stop selected torrents during playback</span>
+                        </label>
+                        <div class="fieldDescription">
+                            QControl adds the Marker Tag before stopping explicit hashes and never uses start-all or
+                            stop-all.
+                        </div>
+                    </div>
+
+                    <fieldset id="qControlStopSettings" class="qControlFieldset">
+                        <legend>Stop Torrents selection</legend>
+                        <div class="selectContainer">
+                            <label class="selectLabel" for="qControlStopScope">Category scope</label>
+                            <select is="emby-select" id="qControlStopScope"
+                                    class="emby-select-withcolor emby-select">
+                                <option value="0">All torrents, including uncategorized</option>
+                                <option value="1">Only selected categories</option>
+                            </select>
+                        </div>
+
+                        <fieldset id="qControlCategorySelection" class="qControlFieldset qControlNestedFieldset" hidden>
+                            <legend>Categories</legend>
+                            <div id="qControlCategoryChoices">
+                                <p class="fieldDescription">Test the connection to discover categories.</p>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="qControlFieldset qControlNestedFieldset">
+                            <legend>Torrent lifecycle</legend>
+                            <div class="checkboxContainer">
+                                <label class="emby-checkbox-label">
+                                    <input is="emby-checkbox" id="qControlIncludeIncomplete" type="checkbox" />
+                                    <span>Incomplete torrents (downloading)</span>
+                                </label>
+                            </div>
+                            <div class="checkboxContainer">
+                                <label class="emby-checkbox-label">
+                                    <input is="emby-checkbox" id="qControlIncludeCompleted" type="checkbox" />
+                                    <span>Completed torrents (seeding)</span>
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <div class="qControlTagGrid">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="qControlMarkerTag">Marker Tag</label>
+                                <input is="emby-input" id="qControlMarkerTag" type="text" autocomplete="off" />
+                                <div class="fieldDescription">Marks restart intent before a torrent is stopped.</div>
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="qControlNeverTouchTag">Never-touch Tag</label>
+                                <input is="emby-input" id="qControlNeverTouchTag" type="text" autocomplete="off" />
+                                <div class="fieldDescription">Dominates every QControl torrent mutation.</div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="qControlReleaseGraceSeconds">
+                            Release grace (seconds)
+                        </label>
+                        <input is="emby-input" id="qControlReleaseGraceSeconds" type="number"
+                               min="0" max="86400" step="1" />
+                        <div class="fieldDescription">
+                            Protection starts immediately. Restoration begins only after all players are absent for
+                            this long.
+                        </div>
+                    </div>
+
+                    <div id="qControlClientValidation" class="qControlInlineStatus qControlWarning"
+                         aria-live="polite"></div>
+                    <div class="qControlActions">
+                        <button is="emby-button" type="button" class="raised button-submit"
+                                data-action="save-configuration">
+                            <span>Save configuration</span>
+                        </button>
+                    </div>
+                    <div id="qControlConfigurationStatus" class="qControlInlineStatus" aria-live="polite"></div>
+                </section>
+            </div>
+        </form>
+
+        <section id="qControlRecovery" class="verticalSection qControlCard"
+                 aria-labelledby="qControlRecoveryTitle">
+            <h2 id="qControlRecoveryTitle" class="sectionTitle">Interruption recovery</h2>
+            <p class="fieldDescription">
+                These administrator actions are explicit. Each confirmation states exactly what can change in
+                qBittorrent.
+            </p>
+            <div class="qControlRecoveryGrid">
+                <div>
+                    <button is="emby-button" type="button" class="raised button-warning"
+                            data-action="resume-marked" disabled>
+                        <span>Resume marked torrents</span>
+                    </button>
+                    <p class="fieldDescription">Starts non-excluded Marker-tagged torrents, then removes the tag.</p>
+                </div>
+                <div>
+                    <button is="emby-button" type="button" class="raised button-warning"
+                            data-action="restore-speed" disabled>
+                        <span>Restore previous speed setting</span>
+                    </button>
+                    <p class="fieldDescription">Restores the Alternative Limits mode recorded before protection.</p>
+                </div>
+                <div>
+                    <button is="emby-button" type="button" class="raised button"
+                            data-action="mark-resolved" disabled>
+                        <span>Mark resolved without changing qBittorrent</span>
+                    </button>
+                    <p class="fieldDescription">Clears only QControl's recovery record.</p>
+                </div>
+            </div>
+            <div id="qControlRecoveryStatus" class="qControlInlineStatus" aria-live="polite"></div>
+        </section>
+
+        <dialog id="qControlRecoveryDialog" class="qControlDialog"
+                aria-modal="true" aria-labelledby="qControlRecoveryDialogTitle"
+                aria-describedby="qControlRecoveryDialogDescription">
+            <h2 id="qControlRecoveryDialogTitle" class="sectionTitle">Confirm recovery</h2>
+            <p id="qControlRecoveryDialogDescription" class="fieldDescription"></p>
+            <div class="qControlActions">
+                <button is="emby-button" type="button" class="raised button-warning"
+                        data-action="confirm-recovery">
+                    <span>Confirm recovery action</span>
+                </button>
+                <button is="emby-button" type="button" class="raised button"
+                        data-action="cancel-recovery">
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </dialog>
     </div>
+
+    <style>
+        #qControlPage [hidden] { display: none !important; }
+        .qControlContent { max-width: 76rem; }
+        .qControlIntroduction { margin-bottom: 1.5rem; }
+        .qControlGrid { display: grid; gap: 1.25rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .qControlCard {
+            border: 1px solid rgba(255, 255, 255, .18);
+            border-radius: .45rem;
+            margin-bottom: 1.25rem;
+            min-width: 0;
+            padding: 1.25rem;
+        }
+        .qControlSectionHeading { align-items: start; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+        .qControlSectionHeading .emby-button { margin: 0; }
+        .qControlStatusPanel { background: rgba(255, 255, 255, .04); border-radius: .35rem; margin-top: 1rem; padding: 1rem; }
+        .qControlStatusPanel h3 { margin: 0 0 .75rem; }
+        .qControlStatusPanel ul { margin-bottom: 0; }
+        .qControlActions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+        .qControlActions .emby-button { margin: 0; }
+        .qControlInlineStatus { margin: .75rem 0; min-height: 1.5rem; overflow-wrap: anywhere; }
+        .qControlError { color: #ffb3b3; }
+        .qControlWarning { color: #ffd27f; }
+        .qControlSuccess { color: #9ee6a8; }
+        .qControlFieldset { border: 0; margin: 1rem 0; min-width: 0; padding: 0; }
+        .qControlFieldset > legend { font-size: 1.08rem; font-weight: 600; margin-bottom: .75rem; }
+        .qControlNestedFieldset { border-left: .2rem solid rgba(255, 255, 255, .16); padding-left: 1rem; }
+        .qControlTagGrid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .qControlCategoryChoice { margin-bottom: .55rem; overflow-wrap: anywhere; }
+        .qControlMissing { color: #ffd27f; font-size: .92rem; }
+        .qControlRecoveryGrid { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .qControlRecoveryGrid .emby-button { margin: 0; width: 100%; }
+        .qControlDialog {
+            background: var(--background-color, #181818);
+            border: 1px solid rgba(0, 164, 220, .75);
+            border-radius: .45rem;
+            color: inherit;
+            margin: auto;
+            max-height: calc(100vh - 2rem);
+            max-width: 38rem;
+            overflow: auto;
+            padding: 1.25rem;
+            width: calc(100% - 2rem);
+        }
+        .qControlDialog::backdrop { background: rgba(0, 0, 0, .72); }
+        .qControlVisuallyHidden {
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            height: 1px;
+            overflow: hidden;
+            position: absolute;
+            white-space: nowrap;
+            width: 1px;
+        }
+        @media (max-width: 52rem) {
+            .qControlGrid, .qControlRecoveryGrid, .qControlTagGrid { grid-template-columns: minmax(0, 1fr); }
+            .qControlCard { padding: 1rem; }
+        }
+    </style>
 </div>

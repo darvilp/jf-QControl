@@ -14,6 +14,7 @@ tests/fixtures/qbittorrent-client-contract.test.sh
 tests/fixtures/qbittorrent-action-contract.test.sh
 tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
 tests/fixtures/jellyfin-qcontrol-contract.test.sh
+tests/fixtures/jellyfin-dashboard-contract.test.sh
 ```
 
 Run the complete repository-skeleton and compatibility gate with:
@@ -89,12 +90,38 @@ qBittorrent API, inspects privacy-safe live status and journal content, ends
 playback, and proves grace-based speed, tag, stopped-state, and category
 restoration.
 
+Run the complete administrator-dashboard slice with:
+
+```bash
+scripts/test-issue-009.sh
+```
+
+This first runs the browser-independent JavaScript contracts and the complete
+Issue 008 server slice. It then verifies that Jellyfin serves the embedded page
+and controller intact and runs pinned Playwright Chromium in an isolated
+Compose service against the packaged plugin. The browser configures the real
+secret-file connection, enables both actions, selects `radarr`, saves, checks
+that no credential returns to the DOM or console, exercises keyboard focus and
+a 390-pixel layout, and confirms that recovery sends no command before its
+native dialog is accepted.
+
+For only the packaged browser smoke, run:
+
+```bash
+scripts/test-browser-e2e.sh
+```
+
+Browser reports, traces, screenshots, and videos are written below the ignored
+`artifacts/playwright/` directory. They are retained on failure and must never
+contain the generated API key.
+
 ## Prerequisites
 
 - Git
 - .NET SDK 9
 - Docker Engine with Compose
 - A browser for administrator-page smoke testing
+- Node.js 20 or newer for the dependency-free administrator-page unit tests
 
 The local workstation used for initial planning has a working .NET 9, Docker,
 and Compose installation. The repository must not depend on the developer's
@@ -130,6 +157,11 @@ HTTP-only gateway
 
 All three images are pinned by version and registry digest in `compose.yaml`.
 `latest` is not an accepted dependency.
+
+The optional `compose.e2e.yaml` overlay adds a pinned Playwright image on the
+internal test network. It receives only the local Jellyfin administrator
+fixture credentials; qBittorrent's API key remains mounted into Jellyfin and
+is never mounted into the browser service.
 
 The WebUI is reachable from Jellyfin as `http://qbittorrent:18180` and from the
 host as `http://127.0.0.1:18180`. Jellyfin is exposed at

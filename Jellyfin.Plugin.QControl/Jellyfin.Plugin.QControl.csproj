@@ -31,5 +31,7 @@
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
     <EmbeddedResource Include="Configuration\configPage.html" />
+    <None Remove="Configuration\configPage.js" />
+    <EmbeddedResource Include="Configuration\configPage.js" />
   </ItemGroup>
 </Project>

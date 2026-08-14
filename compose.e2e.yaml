@@ -1,0 +1,19 @@
+services:
+  browser-e2e:
+    build:
+      context: .
+      dockerfile: tests/e2e/Dockerfile
+    init: true
+    user: "${QCONTROL_UID:-1000}:${QCONTROL_GID:-1000}"
+    depends_on:
+      jellyfin:
+        condition: service_healthy
+    environment:
+      CI: "${CI:-}"
+      PLAYWRIGHT_BASE_URL: http://jellyfin:8096
+      QCONTROL_ADMIN_NAME: qcontrol-admin
+      QCONTROL_ADMIN_PASSWORD: qcontrol-local-only
+    volumes:
+      - ./artifacts/playwright:/work/artifacts
+    networks:
+      testnet:

@@ -1,0 +1,12 @@
+{
+  "name": "jellyfin-plugin-qcontrol-browser-tests",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test --config playwright.config.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0"
+  }
+}

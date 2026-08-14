@@ -134,6 +134,12 @@ release. It checks every selected torrent by explicit hash, the live status
 shape, journal secret containment, and restoration of the initial Alternative
 Limits mode, torrent states, Marker Tags, and categories.
 
+The packaged Issue 009 browser slice drives the embedded administrator page in
+Chromium against the same Jellyfin and qBittorrent services. It verifies that
+the JavaScript remains a thin client of the Issue 008 APIs and that native
+Jellyfin control enhancement, responsive layout, confirmation, and credential
+non-round-trip work after installation.
+
 ### 2.7 Release smoke tests
 
 Cover:
@@ -146,6 +152,24 @@ Cover:
 - version consistency across assembly, build metadata, package, release tag,
   and manifest;
 - upgrade from the previous public package beginning with the second release.
+
+### 2.8 Administrator browser tests
+
+Use dependency-free Node tests for pure controller helpers and a pinned
+Playwright Chromium container for the installed-page boundary.
+
+Cover:
+
+- embedded HTML and controller discovery through Jellyfin;
+- write-only credential replacement and source switching;
+- exact connection/configuration request candidates;
+- missing configured category retention;
+- server-owned validation and plain-language failures;
+- privacy-safe status rendering and deduplicated live announcements;
+- recovery confirmation, cancellation, focus return, and single dispatch;
+- keyboard focus order and narrow-layout overflow;
+- absence of API-key content in the DOM, responses, console, and retained
+  successful-test artifacts.
 
 ## 3. High-value properties
 

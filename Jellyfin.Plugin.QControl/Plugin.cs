@@ -42,10 +42,16 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages()
     {
+        const string resourcePrefix = "Jellyfin.Plugin.QControl.Configuration";
         yield return new PluginPageInfo
         {
             Name = Name,
-            EmbeddedResourcePath = "Jellyfin.Plugin.QControl.Configuration.configPage.html",
+            EmbeddedResourcePath = resourcePrefix + ".configPage.html",
+        };
+        yield return new PluginPageInfo
+        {
+            Name = Name + ".js",
+            EmbeddedResourcePath = resourcePrefix + ".configPage.js",
         };
     }
 

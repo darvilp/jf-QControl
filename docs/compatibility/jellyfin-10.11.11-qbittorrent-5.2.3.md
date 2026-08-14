@@ -4,8 +4,8 @@ Status: **passed on 2026-08-14**
 
 This report began as the Issue 001 compatibility spike and now also records the
 production qBittorrent client, physical journal, Stop Torrents, Alternative
-Limits, and hosted Jellyfin playback coordination evidence completed through
-Issue 008.
+Limits, hosted Jellyfin playback coordination, administrator server API, and
+administrator dashboard evidence completed through Issue 009.
 
 ## Pinned environment
 
@@ -106,6 +106,19 @@ with no journal present. Status exposed explicit marked recovery; the recovery
 endpoint started and read-back-confirmed that hash, removed its Marker Tag,
 preserved its category, and deleted its temporary manual-recovery journal.
 
+Issue 009 verified that Jellyfin served the embedded responsive page and ES
+module controller from the package. Pinned Playwright Chromium signed in as the
+isolated administrator, waited for the first live server status, switched to
+the mounted secret-file credential, and submitted the exact qBittorrent
+address, credential mode, and path without an API-key round-trip. It completed
+a real qBittorrent 5.2.3 connection test, enabled both actions, selected the
+`radarr` scope, saved through the server contract, and retained an empty key
+field with no API-key-shaped console output. Keyboard focus advanced through
+the connection controls, and a 390-by-844 viewport had no horizontal overflow.
+An interrupted-journal fixture also proved that canceling the native recovery
+dialog made no request and returned focus, while accepting it sent exactly one
+administrator recovery command.
+
 ## qBittorrent authentication and reads
 
 The LinuxServer image requires the configured WebUI port to match the container
@@ -192,7 +205,9 @@ tests/fixtures/qbittorrent-alternative-limits-contract.test.sh
 tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
 tests/fixtures/jellyfin-qcontrol-contract.test.sh
+tests/fixtures/jellyfin-dashboard-contract.test.sh
 scripts/test-issue-008.sh
+scripts/test-issue-009.sh
 ```
 
 `scripts/test-issue-001.sh` runs these together with restore, build, unit tests,
@@ -205,11 +220,13 @@ shell lint, and package verification.
   and replacement failures, and resolved the same sibling path shape already
   retained by the Jellyfin container restart fixture. Issue 005 then exercised
   that store at every Stop Torrents mutation boundary against the real fixture.
-- Issue 009 adds the administrator dashboard over the validated server API.
-  Issue 008 already owns revisioned configuration, active snapshots,
-  privacy-safe status, and explicit recovery commands.
+- Issue 009 adds the administrator dashboard over the validated server API;
+  its isolated Chromium proof covers configuration and recovery at desktop and
+  narrow widths. Issue 008 continues to own revisioned configuration, active
+  snapshots, privacy-safe status, and explicit recovery semantics.
 - The credential source uses platform-native .NET file APIs without Unix path
   parsing, but a native Windows secret-file smoke cannot be claimed from this
   Linux host. The Windows alpha procedure must verify a Jellyfin-service-readable,
   ACL-protected key file before cross-platform readiness is claimed.
-- A real browser/player smoke remains in Issue 010.
+- A real player smoke and alpha install/upgrade hardening remain in Issue 010;
+  the administrator browser smoke is complete.

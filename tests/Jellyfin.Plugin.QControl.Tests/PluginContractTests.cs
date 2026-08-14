@@ -35,14 +35,28 @@ public sealed class PluginContractTests
         Assert.Equal("QControl", plugin.Name);
         Assert.Equal(new Guid("ab18c878-1856-4853-8f21-5028a1d5a7b2"), plugin.Id);
 
-        var page = Assert.Single(Assert.IsAssignableFrom<IHasWebPages>(instance).GetPages());
-        Assert.Equal("QControl", page.Name);
-        Assert.Equal(
-            "Jellyfin.Plugin.QControl.Configuration.configPage.html",
-            page.EmbeddedResourcePath);
-
-        using var resource = assembly.GetManifestResourceStream(page.EmbeddedResourcePath);
-        Assert.NotNull(resource);
+        var pages = Assert.IsAssignableFrom<IHasWebPages>(instance).GetPages().ToArray();
+        Assert.Collection(
+            pages,
+            page =>
+            {
+                Assert.Equal("QControl", page.Name);
+                Assert.Equal(
+                    "Jellyfin.Plugin.QControl.Configuration.configPage.html",
+                    page.EmbeddedResourcePath);
+            },
+            page =>
+            {
+                Assert.Equal("QControl.js", page.Name);
+                Assert.Equal(
+                    "Jellyfin.Plugin.QControl.Configuration.configPage.js",
+                    page.EmbeddedResourcePath);
+            });
+        foreach (var page in pages)
+        {
+            using var resource = assembly.GetManifestResourceStream(page.EmbeddedResourcePath);
+            Assert.NotNull(resource);
+        }
 
         var typedPlugin = Assert.IsType<Jellyfin.Plugin.QControl.Plugin>(instance);
         Assert.Throws<InvalidOperationException>(() =>
