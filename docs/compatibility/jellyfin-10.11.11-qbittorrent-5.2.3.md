@@ -2,9 +2,10 @@
 
 Status: **passed on 2026-08-14**
 
-This report records the Issue 001 compatibility spike. It proves runtime and
-Web API assumptions used by later production adapters; it does not claim that
-the protection state machine is implemented.
+This report began as the Issue 001 compatibility spike and now also records the
+production qBittorrent client, physical journal, and Stop Torrents vertical
+slice evidence completed through Issue 005. Jellyfin playback coordination and
+Alternative Limits orchestration remain later slices.
 
 ## Pinned environment
 
@@ -99,6 +100,14 @@ the mode-`0600` secret file. The adapter accepted application `5.2.3` and Web
 API `2.15.1`, returned only neutral policy fields (hash, category, bytes
 remaining, stopped state, and tags), and never exposed torrent names.
 
+Issue 005 ran the serialized production Stop Torrents service with that client
+and the physical atomic journal. It selected all initially running non-excluded
+fixture hashes, durably recorded marker intent, added the marker, stopped only
+read-back-confirmed marked hashes, and restored those hashes before removing
+the marker. The completed-stopped, incomplete-stopped, and Never-touch
+preconditions were checked after both protection and restoration; none were
+cycled merely to defeat qBittorrent queueing.
+
 ## Stable torrent states
 
 | Fixture | Observed qBittorrent state | Progress |
@@ -142,6 +151,7 @@ tests/fixtures/teardown-guard.test.sh
 tests/fixtures/qbittorrent-compatibility.test.sh
 tests/fixtures/qbittorrent-mutations.test.sh
 tests/fixtures/qbittorrent-client-contract.test.sh
+tests/fixtures/qbittorrent-action-contract.test.sh
 tests/fixtures/jellyfin-session-snapshots.test.sh
 tests/fixtures/jellyfin-compatibility.test.sh
 ```
@@ -154,10 +164,11 @@ shell lint, and package verification.
 - Issue 004's physical journal store round-tripped beside a simulated runtime
   configuration directory, proved old-or-new visibility under injected write
   and replacement failures, and resolved the same sibling path shape already
-  retained by the Jellyfin container restart fixture. Coordinator integration
-  begins in later vertical slices.
-- In-process event subscription and serialized reconciliation begin in Issue
-  007; Issue 001 proves the exact event surface and runtime snapshot shapes.
+  retained by the Jellyfin container restart fixture. Issue 005 then exercised
+  that store at every Stop Torrents mutation boundary against the real fixture.
+- In-process event subscription and the top-level coordinator begin in Issue
+  007; Issue 001 proves the exact event surface and runtime snapshot shapes,
+  while Issue 005 proves serialization inside the Stop Torrents action seam.
 - The credential source uses platform-native .NET file APIs without Unix path
   parsing, but a native Windows secret-file smoke cannot be claimed from this
   Linux host. The Windows alpha procedure must verify a Jellyfin-service-readable,

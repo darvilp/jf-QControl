@@ -11,6 +11,7 @@ scripts/dotnet.sh build Jellyfin.Plugin.QControl.sln --configuration Release --n
 scripts/dotnet.sh test Jellyfin.Plugin.QControl.sln --configuration Release --no-build --no-restore
 tests/packaging/package-contract.test.sh
 tests/fixtures/qbittorrent-client-contract.test.sh
+tests/fixtures/qbittorrent-action-contract.test.sh
 ```
 
 Run the complete repository-skeleton and compatibility gate with:
@@ -33,6 +34,18 @@ The qBittorrent client contract command starts the isolated stack, creates six
 dummy torrents, and runs the production C# adapter through every V1 endpoint.
 It restores the selected torrent's stopped state, its temporary tag, and the
 initial Alternative Limits mode before teardown.
+
+Run the complete Stop Torrents application slice with:
+
+```bash
+scripts/test-issue-005.sh
+```
+
+Its action contract uses the production client, physical journal store, and
+serialized Stop Torrents service against the six real qBittorrent fixtures. It
+protects every initially running non-excluded hash, proves already-stopped and
+Never-touch fixtures remain untouched, restores only marked hashes, and then
+returns the fixture to its initial stopped/running shape.
 
 ## Prerequisites
 
@@ -145,6 +158,12 @@ precondition before exercising QControl. Fixed sleeps are not acceptance proof.
 Transient states such as checking, moving, and metadata download are covered by
 deterministic client/domain contract cases unless a real compatibility finding
 shows that their stop behavior differs materially.
+
+The Stop Torrents application tests additionally fault partial tag, stop/start,
+and marker-removal progress through the public qBittorrent and journal seams.
+They assert that durable intent precedes every external mutation, only
+read-back-confirmed marked hashes can be stopped, and repeated reconciliation
+reaches a mutation-free fixed point.
 
 ## Jellyfin playback fixtures
 

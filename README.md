@@ -6,8 +6,10 @@ qBittorrent Alternative Limits and stop administrator-selected torrents, then
 restore the controlled state after a configurable grace period.
 
 The repository currently contains the loadable Jellyfin 10.11 plugin skeleton,
-package tooling, and isolated Jellyfin/qBittorrent compatibility fixtures. The
-protection behavior and administrator configuration are still being implemented.
+package tooling, isolated Jellyfin/qBittorrent compatibility fixtures, and a
+journaled Stop Torrents action slice. Jellyfin playback coordination,
+Alternative Limits orchestration, and administrator configuration are still
+being implemented.
 
 ## V1 direction
 
@@ -43,10 +45,12 @@ scripts/dotnet.sh restore Jellyfin.Plugin.QControl.sln
 scripts/dotnet.sh test Jellyfin.Plugin.QControl.sln --configuration Release
 tests/packaging/package-contract.test.sh
 scripts/test-issue-001.sh
+scripts/test-issue-005.sh
 ```
 
-The last command runs the Docker compatibility suite and uses only the
-project-owned state below `.testenv/`. QControl uses loopback ports `18196` and
+The issue gates run the Docker compatibility suite and use only the
+project-owned state below `.testenv/`; Issue 005 additionally exercises real
+journaled protection and restoration. QControl uses loopback ports `18196` and
 `18180`, so the TagSync fixture can remain running on `18096`.
 
 ## License

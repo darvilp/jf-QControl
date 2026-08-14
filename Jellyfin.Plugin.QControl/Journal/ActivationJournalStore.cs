@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.QControl.Journal;
 /// <summary>
 /// Atomically persists and classifies one active activation journal.
 /// </summary>
-public sealed class ActivationJournalStore
+public sealed class ActivationJournalStore : IActivationJournalStore
 {
     private const int CurrentSchemaVersion = 1;
     private const int MaximumJournalBytes = 1024 * 1024;
