@@ -8,6 +8,14 @@
         "category": "General",
         "versions": [
             {
+                "version": "0.1.0.1",
+                "changelog": "Adds unauthenticated qBittorrent access, explicit credential-set actions, creatable multi-tag exclusions with global-catalog suggestions, fresh tag defaults, and more tolerant queued-start recovery.\n",
+                "targetAbi": "10.11.11.0",
+                "sourceUrl": "https://github.com/darvilp/jf-QControl/releases/download/v0.1.0.1/Jellyfin.Plugin.QControl_0.1.0.1.zip",
+                "checksum": "9525a6fb2742157822e2449b86006706",
+                "timestamp": "2026-08-15T14:00:44Z"
+            },
+            {
                 "version": "0.1.0.0",
                 "changelog": "First alpha candidate with playback-driven Alternative Limits and journaled explicit-torrent control, administrator configuration, and conservative interruption recovery for Jellyfin 10.11.11 and qBittorrent 5.2.3.\n",
                 "targetAbi": "10.11.11.0",
