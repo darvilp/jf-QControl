@@ -60,6 +60,19 @@ public sealed class QbittorrentConnectionProbeTests
         Assert.True(connected.IsConnected);
         Assert.Equal("5.2.3", connected.ApplicationVersion);
         Assert.Equal(["radarr", "sonarr"], connected.Categories);
+        Assert.True(connected.IsTagCatalogAvailable);
+        Assert.Equal(["cross-seed", "manual"], connected.Tags);
+
+        client.TagFailure = new QbittorrentClientException(
+            QbittorrentClientError.InvalidResponse,
+            "Invalid tag response.");
+        var withoutSuggestions = await probe.ProbeAsync(candidate, CancellationToken.None);
+
+        Assert.True(withoutSuggestions.IsConnected);
+        Assert.False(withoutSuggestions.IsTagCatalogAvailable);
+        Assert.Empty(withoutSuggestions.Tags);
+        Assert.Null(withoutSuggestions.Failure);
+        client.TagFailure = null;
 
         client.Failure = new QbittorrentClientException(
             QbittorrentClientError.Authentication,
@@ -118,6 +131,8 @@ public sealed class QbittorrentConnectionProbeTests
     {
         public QbittorrentClientException? Failure { get; set; }
 
+        public QbittorrentClientException? TagFailure { get; set; }
+
         public Task<QbittorrentServerInfo> GetServerInfoAsync(CancellationToken cancellationToken)
         {
             if (Failure is not null)
@@ -133,6 +148,16 @@ public sealed class QbittorrentConnectionProbeTests
         public Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken)
         {
             return Task.FromResult<IReadOnlyList<string>>(["sonarr", "radarr"]);
+        }
+
+        public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken)
+        {
+            if (TagFailure is not null)
+            {
+                throw TagFailure;
+            }
+
+            return Task.FromResult<IReadOnlyList<string>>(["manual", "cross-seed"]);
         }
 
         public Task<IReadOnlyList<Jellyfin.Plugin.QControl.Domain.Torrents.TorrentSnapshot>>

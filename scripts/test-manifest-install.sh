@@ -140,7 +140,7 @@ jq --exit-status \
       and .Status == "Active")' \
     <<<"${plugins}" >/dev/null
 
-candidate='{"expectedRevision":0,"qbittorrentBaseAddress":"","credentialMode":0,"secretFilePath":"","apiKeyReplacement":"","clearStoredApiKey":false,"alternativeLimitsEnabled":false,"stopTorrentsEnabled":false,"stopScope":0,"selectedCategories":[],"includeIncomplete":true,"includeCompleted":true,"markerTag":"jfManifestStopped","neverTouchTag":"jfManifestNeverTouch","releaseGraceSeconds":60}'
+candidate='{"expectedRevision":0,"qbittorrentBaseAddress":"","credentialMode":0,"secretFilePath":"","apiKeyReplacement":"","clearStoredApiKey":false,"alternativeLimitsEnabled":false,"stopTorrentsEnabled":false,"stopScope":0,"selectedCategories":[],"includeIncomplete":true,"includeCompleted":true,"markerTag":"manifest-resume","exclusionTags":["manifest-ignore","secondary-ignore"],"releaseGraceSeconds":60}'
 save_result="$(curl --fail --silent --show-error \
     --request PUT \
     --header "X-Emby-Token: ${access_token}" \
@@ -165,8 +165,8 @@ retained="$(curl --fail --silent --show-error \
     "${server_url}/QControl/Configuration")"
 jq --exit-status \
     '(.revision // .Revision) == 1
-     and (.markerTag // .MarkerTag) == "jfManifestStopped"
-     and (.neverTouchTag // .NeverTouchTag) == "jfManifestNeverTouch"' \
+     and (.markerTag // .MarkerTag) == "manifest-resume"
+     and ((.exclusionTags // .ExclusionTags) == ["manifest-ignore", "secondary-ignore"])' \
     <<<"${retained}" >/dev/null
 if grep --fixed-strings --quiet 'qbt_' <<<"${retained}"; then
     printf 'Credential content appeared after manifest-install restart.\n' >&2

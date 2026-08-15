@@ -16,12 +16,19 @@ public sealed record QbittorrentConnectionProbeResult
         Version? applicationVersion,
         Version? webApiVersion,
         IEnumerable<string> categories,
+        IEnumerable<string> tags,
+        bool isTagCatalogAvailable,
         JournalFailureCode? failure)
     {
         IsConnected = isConnected;
         ApplicationVersion = applicationVersion?.ToString();
         WebApiVersion = webApiVersion?.ToString();
         Categories = new ReadOnlyCollection<string>(categories.Order(StringComparer.Ordinal).ToArray());
+        Tags = new ReadOnlyCollection<string>(tags
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray());
+        IsTagCatalogAvailable = isTagCatalogAvailable;
         Failure = failure;
     }
 
@@ -37,6 +44,12 @@ public sealed record QbittorrentConnectionProbeResult
     /// <summary>Gets deterministic exact category names.</summary>
     public IReadOnlyList<string> Categories { get; }
 
+    /// <summary>Gets deterministic exact registered tag names.</summary>
+    public IReadOnlyList<string> Tags { get; }
+
+    /// <summary>Gets a value indicating whether global tag suggestions were available.</summary>
+    public bool IsTagCatalogAvailable { get; }
+
     /// <summary>Gets the bounded failure, if any.</summary>
     public JournalFailureCode? Failure { get; }
 
@@ -44,11 +57,15 @@ public sealed record QbittorrentConnectionProbeResult
     /// <param name="applicationVersion">The compatible application version.</param>
     /// <param name="webApiVersion">The compatible Web API version.</param>
     /// <param name="categories">The exact discovered category names.</param>
+    /// <param name="tags">The exact registered tag names.</param>
+    /// <param name="isTagCatalogAvailable">Whether tag suggestions were read successfully.</param>
     /// <returns>Successful bounded evidence.</returns>
     public static QbittorrentConnectionProbeResult Connected(
         Version applicationVersion,
         Version webApiVersion,
-        IEnumerable<string> categories)
+        IEnumerable<string> categories,
+        IEnumerable<string>? tags = null,
+        bool isTagCatalogAvailable = false)
     {
         ArgumentNullException.ThrowIfNull(applicationVersion);
         ArgumentNullException.ThrowIfNull(webApiVersion);
@@ -58,6 +75,8 @@ public sealed record QbittorrentConnectionProbeResult
             applicationVersion,
             webApiVersion,
             categories,
+            tags ?? [],
+            isTagCatalogAvailable,
             null);
     }
 
@@ -66,6 +85,6 @@ public sealed record QbittorrentConnectionProbeResult
     /// <returns>Failed bounded evidence.</returns>
     public static QbittorrentConnectionProbeResult Failed(JournalFailureCode failure)
     {
-        return new QbittorrentConnectionProbeResult(false, null, null, [], failure);
+        return new QbittorrentConnectionProbeResult(false, null, null, [], [], false, failure);
     }
 }

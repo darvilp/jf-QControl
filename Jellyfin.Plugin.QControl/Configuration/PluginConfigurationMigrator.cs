@@ -16,7 +16,9 @@ public static class PluginConfigurationMigrator
         out bool changed)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        changed = configuration.SchemaVersion == 0 || configuration.SelectedCategories is null;
+        changed = configuration.SchemaVersion == 0
+            || configuration.SelectedCategories is null
+            || configuration.ExclusionTags is null;
         if (!changed)
         {
             return configuration;
@@ -40,11 +42,9 @@ public static class PluginConfigurationMigrator
             IncludeIncomplete = true,
             IncludeCompleted = true,
             MarkerTag = string.IsNullOrWhiteSpace(configuration.MarkerTag)
-                ? "jfStopped"
+                ? "qcontrol-resume"
                 : configuration.MarkerTag,
-            NeverTouchTag = string.IsNullOrWhiteSpace(configuration.NeverTouchTag)
-                ? "jfNeverTouch"
-                : configuration.NeverTouchTag,
+            ExclusionTags = configuration.ExclusionTags ?? ["qcontrol-ignore"],
             ReleaseGraceSeconds = configuration.ReleaseGraceSeconds is >= 0 and <= 86400
                 ? configuration.ReleaseGraceSeconds
                 : 60,

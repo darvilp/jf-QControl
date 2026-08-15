@@ -130,8 +130,8 @@ internal static class Program
                 SelectedCategories: [],
                 IncludeIncomplete: true,
                 IncludeCompleted: true,
-                MarkerTag: "jfStopped",
-                NeverTouchTag: "jfNeverTouch",
+                MarkerTag: "qcontrol-resume",
+                ExclusionTags: ["qcontrol-ignore"],
                 ReleaseGrace: TimeSpan.Zero),
             Endpoint: new QbittorrentEndpointIdentity(
                 endpoint.Scheme,

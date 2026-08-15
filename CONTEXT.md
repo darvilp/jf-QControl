@@ -43,7 +43,7 @@ _Avoid_: Torrent state filter
 
 **Eligible torrent**:
 A non-stopped torrent inside the stop scope and lifecycle selection that does
-not carry the Never-touch Tag.
+not carry any configured Exclusion Tag.
 _Avoid_: Running torrent, active torrent
 
 **Marker Tag**:
@@ -51,10 +51,15 @@ The configurable qBittorrent tag expressing administrator intent that QControl
 may keep a torrent stopped and later start it.
 _Avoid_: Temporary category, ownership record
 
-**Never-touch Tag**:
-The configurable qBittorrent tag that excludes a torrent from every QControl
-torrent mutation. It takes precedence over the Marker Tag.
-_Avoid_: Ignore category, manual override
+**Exclusion Tag**:
+A qBittorrent tag whose presence excludes a torrent from every QControl torrent
+mutation. Any Exclusion Tag takes precedence over the Marker Tag.
+_Avoid_: Never-touch Tag, ignore category, manual override
+
+**Exclusion Tag List**:
+The possibly empty administrator-configured set of exact Exclusion Tags; a
+match on any member excludes the torrent.
+_Avoid_: Never-start tags, tag filter
 
 **Configuration snapshot**:
 The QControl settings fixed for one protection activation so ordinary

@@ -50,6 +50,36 @@ export function mergeCategoryChoices(discovered, configured) {
 }
 
 /**
+ * Merges the global qBittorrent tag catalog with configured custom values.
+ *
+ * @param {Array<string>} discovered tags returned by qBittorrent
+ * @param {Array<string>} configured exact configured exclusion tags
+ * @returns {Array<string>} stable tag suggestions
+ */
+export function mergeTagSuggestions(discovered, configured) {
+    return [...new Set([...(discovered ?? []), ...(configured ?? [])]
+        .map(value => String(value).trim())
+        .filter(Boolean))]
+        .sort();
+}
+
+function normalizedExclusionTags(values) {
+    return [...new Set((values ?? []).map(value => String(value).trim()))].sort();
+}
+
+function exclusionTagProblem(exclusionTags) {
+    if (exclusionTags.length > 64) {
+        return 'Use no more than 64 Exclusion Tags.';
+    }
+
+    if (exclusionTags.some(tag => !tag || tag.length > 128 || tag.includes(',') || /[\u0000-\u001f\u007f]/.test(tag))) {
+        return 'Exclusion Tags must be 1–128 characters and cannot contain commas, newlines, or control characters.';
+    }
+
+    return null;
+}
+
+/**
  * Builds the complete server candidate while treating credential content as write-only.
  *
  * @param {object} editor current editor values
@@ -71,7 +101,7 @@ export function buildConfigurationCandidate(editor) {
         IncludeIncomplete: Boolean(editor.includeIncomplete),
         IncludeCompleted: Boolean(editor.includeCompleted),
         MarkerTag: String(editor.markerTag ?? '').trim(),
-        NeverTouchTag: String(editor.neverTouchTag ?? '').trim(),
+        ExclusionTags: normalizedExclusionTags(editor.exclusionTags),
         ReleaseGraceSeconds: Number(editor.releaseGraceSeconds ?? 0)
     };
 }
@@ -97,8 +127,8 @@ export function buildConnectionCandidate(configuration, editor) {
         selectedCategories: property(configuration, 'SelectedCategories', []) ?? [],
         includeIncomplete: property(configuration, 'IncludeIncomplete', true),
         includeCompleted: property(configuration, 'IncludeCompleted', true),
-        markerTag: property(configuration, 'MarkerTag', 'jfStopped'),
-        neverTouchTag: property(configuration, 'NeverTouchTag', 'jfNeverTouch'),
+        markerTag: property(configuration, 'MarkerTag', 'qcontrol-resume'),
+        exclusionTags: property(configuration, 'ExclusionTags', ['qcontrol-ignore']) ?? [],
         releaseGraceSeconds: property(configuration, 'ReleaseGraceSeconds', 60)
     });
 }
@@ -110,6 +140,12 @@ export function buildConnectionCandidate(configuration, editor) {
  * @returns {string|null} one plain-language editor problem
  */
 export function validateEditor(editor) {
+    const exclusionTags = normalizedExclusionTags(editor.exclusionTags);
+    const tagProblem = exclusionTagProblem(exclusionTags);
+    if (tagProblem) {
+        return tagProblem;
+    }
+
     if (!editor.stopTorrentsEnabled) {
         return null;
     }
@@ -119,13 +155,12 @@ export function validateEditor(editor) {
     }
 
     const marker = String(editor.markerTag ?? '').trim();
-    const neverTouch = String(editor.neverTouchTag ?? '').trim();
-    if (!marker || !neverTouch) {
-        return 'Marker Tag and Never-touch Tag are both required.';
+    if (!marker) {
+        return 'Marker Tag is required.';
     }
 
-    if (marker === neverTouch) {
-        return 'Marker Tag and Never-touch Tag must be different.';
+    if (exclusionTags.includes(marker)) {
+        return 'Marker Tag and Exclusion Tags must be different.';
     }
 
     const scope = enumValue(editor.stopScope, ['All', 'SelectedCategories'], 0);
@@ -337,6 +372,9 @@ export default function createPageController(view) {
     const state = {
         configuration: null,
         discoveredCategories: [],
+        discoveredTags: [],
+        exclusionTags: [],
+        isTagCatalogAvailable: false,
         categoryEditorInitialized: false,
         active: false,
         statusTimer: null,
@@ -383,7 +421,7 @@ export default function createPageController(view) {
             includeIncomplete: query('#qControlIncludeIncomplete').checked,
             includeCompleted: query('#qControlIncludeCompleted').checked,
             markerTag: query('#qControlMarkerTag').value,
-            neverTouchTag: query('#qControlNeverTouchTag').value,
+            exclusionTags: [...state.exclusionTags],
             releaseGraceSeconds: query('#qControlReleaseGraceSeconds').value
         };
     }
@@ -412,6 +450,47 @@ export default function createPageController(view) {
                 ${choice.missing ? '<div class="qControlMissing">Configured, but not currently returned by qBittorrent.</div>' : ''}
             </div>`).join('');
         state.categoryEditorInitialized = true;
+    }
+
+    function renderExclusionTags() {
+        const list = query('#qControlExclusionTagList');
+        list.innerHTML = state.exclusionTags.length === 0
+            ? '<span class="fieldDescription">No Exclusion Tags configured.</span>'
+            : state.exclusionTags.map(tag => `
+                <div class="qControlTagItem" role="listitem">
+                    <span>${escapeHtml(tag)}</span>
+                    <button is="emby-button" type="button" class="button"
+                            data-action="remove-exclusion-tag" data-tag="${escapeHtml(tag)}"
+                            aria-label="Remove exclusion tag ${escapeHtml(tag)}">Remove</button>
+                </div>`).join('');
+        query('#qControlExclusionTagSuggestions').innerHTML = mergeTagSuggestions(
+            state.discoveredTags,
+            state.exclusionTags).map(tag => `<option value="${escapeHtml(tag)}"></option>`).join('');
+    }
+
+    function addExclusionTag() {
+        const input = query('#qControlExclusionTagInput');
+        const tag = String(input.value ?? '').trim();
+        const candidate = normalizedExclusionTags([...state.exclusionTags, tag]);
+        const problem = exclusionTagProblem(candidate);
+        if (!tag || problem) {
+            setInlineStatus(
+                '#qControlClientValidation',
+                !tag ? 'Enter an Exclusion Tag before selecting Add.' : problem,
+                'Warning');
+            return;
+        }
+
+        state.exclusionTags = candidate;
+        input.value = '';
+        renderExclusionTags();
+        updateEditorState();
+    }
+
+    function removeExclusionTag(tag) {
+        state.exclusionTags = state.exclusionTags.filter(value => value !== tag);
+        renderExclusionTags();
+        updateEditorState();
     }
 
     function updateEditorState() {
@@ -462,8 +541,9 @@ export default function createPageController(view) {
             0));
         query('#qControlIncludeIncomplete').checked = Boolean(property(configuration, 'IncludeIncomplete', true));
         query('#qControlIncludeCompleted').checked = Boolean(property(configuration, 'IncludeCompleted', true));
-        query('#qControlMarkerTag').value = String(property(configuration, 'MarkerTag', 'jfStopped') ?? '');
-        query('#qControlNeverTouchTag').value = String(property(configuration, 'NeverTouchTag', 'jfNeverTouch') ?? '');
+        query('#qControlMarkerTag').value = String(property(configuration, 'MarkerTag', 'qcontrol-resume') ?? '');
+        state.exclusionTags = normalizedExclusionTags(property(configuration, 'ExclusionTags', ['qcontrol-ignore']) ?? []);
+        renderExclusionTags();
         query('#qControlReleaseGraceSeconds').value = String(property(configuration, 'ReleaseGraceSeconds', 60));
         renderCategories(false);
         updateEditorState();
@@ -518,7 +598,14 @@ export default function createPageController(view) {
             const result = await requestJson(apiClient, 'GET', 'QControl/Connection/Categories');
             if (Boolean(property(result, 'IsConnected', false))) {
                 state.discoveredCategories = property(result, 'Categories', []) ?? [];
+                state.discoveredTags = property(result, 'Tags', []) ?? [];
+                state.isTagCatalogAvailable = Boolean(property(result, 'IsTagCatalogAvailable', false));
                 renderCategories();
+                renderExclusionTags();
+                setInlineStatus(
+                    '#qControlTagCatalogStatus',
+                    state.isTagCatalogAvailable ? '' : 'Tag suggestions are temporarily unavailable.',
+                    state.isTagCatalogAvailable ? '' : 'Warning');
             }
         } catch {
             // The connection panel reports explicit tests; loading remains usable offline.
@@ -551,7 +638,14 @@ export default function createPageController(view) {
             }
 
             state.discoveredCategories = property(result, 'Categories', []) ?? [];
+            state.discoveredTags = property(result, 'Tags', []) ?? [];
+            state.isTagCatalogAvailable = Boolean(property(result, 'IsTagCatalogAvailable', false));
             renderCategories();
+            renderExclusionTags();
+            setInlineStatus(
+                '#qControlTagCatalogStatus',
+                state.isTagCatalogAvailable ? '' : 'Connected, but tag suggestions are temporarily unavailable.',
+                state.isTagCatalogAvailable ? '' : 'Warning');
             setInlineStatus(
                 '#qControlConnectionStatus',
                 `Connected to qBittorrent ${property(result, 'ApplicationVersion', 'unknown')} (Web API ${property(result, 'WebApiVersion', 'unknown')}).`,
@@ -773,6 +867,12 @@ export default function createPageController(view) {
             case 'save-configuration':
                 await saveConfiguration();
                 break;
+            case 'add-exclusion-tag':
+                addExclusionTag();
+                break;
+            case 'remove-exclusion-tag':
+                removeExclusionTag(String(button.dataset.tag ?? ''));
+                break;
             case 'resume-marked':
             case 'restore-speed':
             case 'mark-resolved':
@@ -790,6 +890,12 @@ export default function createPageController(view) {
     // Jellyfin's customized form controls may consume bubbling events while updating their wrappers.
     view.addEventListener('change', updateEditorState, true);
     view.addEventListener('input', updateEditorState, true);
+    query('#qControlExclusionTagInput').addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addExclusionTag();
+        }
+    });
     query('#qControlRecoveryDialog').addEventListener('cancel', event => {
         event.preventDefault();
         closeRecovery();

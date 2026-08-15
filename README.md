@@ -27,6 +27,8 @@ https://raw.githubusercontent.com/darvilp/jf-QControl/manifest/manifest.json
 Save the repository, open **Catalog**, install QControl, and restart Jellyfin.
 The current alpha targets Jellyfin `10.11.11`; review the
 [release and installation notes](docs/RELEASE.md) before enabling actions.
+Alpha upgrades may require removing prior configuration and recovery state;
+forward-compatible upgrades begin with the first non-alpha release.
 
 ## V1 direction
 
@@ -39,7 +41,7 @@ The current alpha targets Jellyfin `10.11.11`; review the
 - Independent Alternative Limits and Stop Torrents actions.
 - Stop all torrents or only selected qBittorrent categories.
 - Independently include incomplete and completed torrents.
-- Configurable marker and never-touch tags.
+- Configurable restart-authority Marker Tag and creatable Exclusion Tag List.
 - Explicit-hash mutations; never blind `stop all` or `start all`.
 - Conservative recovery after a Jellyfin/plugin interruption.
 - Windows, native Linux, and containerized Jellyfin support.

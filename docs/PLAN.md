@@ -35,11 +35,14 @@ Before production code:
 | 8 | [Configuration, status, and recovery API](issues/008-configuration-status-and-recovery-api.md) | Administrator contract, snapshots, diagnostics, and manual interruption recovery |
 | 9 | [Administrator dashboard](issues/009-administrator-dashboard.md) | Thin accessible UI over validated server behavior |
 | 10 | [Container proof and release hardening](issues/010-container-proof-and-release-hardening.md) | End-to-end evidence, packaging, manifest, and public-release readiness |
+| 11 | [Creatable Exclusion Tag List](issues/011-exclusion-tag-list.md) | Multi-tag exclusion policy, global-catalog suggestions, and fresh alpha defaults |
 
 The order is deliberate. Issue 1 proves external contracts before adapters grow;
 Issue 2 fixes semantics without frameworks; Issues 3 and 4 establish the two
 critical boundaries; Issues 5 and 6 add actions independently; Issue 7 connects
-them to Jellyfin; UI follows stable server behavior.
+them to Jellyfin; UI follows stable server behavior. Issue 11 evolves the alpha
+tag policy across the already-proven vertical seams before a stable upgrade
+contract exists.
 
 ## 4. Walking slice
 

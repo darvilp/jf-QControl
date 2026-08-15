@@ -43,6 +43,7 @@ public sealed class ConfiguredActivationJournalFactoryTests
                 now));
         configuration.MarkerTag = "changed-after-capture";
         configuration.SelectedCategories[0] = "changed-category";
+        configuration.ExclusionTags[0] = "changed-exclusion";
 
         Assert.Equal(process, journal.ProcessInstanceId);
         Assert.Equal(["session-b", "session-a"], journal.SessionIds.ToArray());
@@ -52,6 +53,7 @@ public sealed class ConfiguredActivationJournalFactoryTests
         Assert.Equal(TorrentScope.SelectedCategories, journal.Configuration.StopScope);
         Assert.Equal(["radarr", "sonarr"], journal.Configuration.SelectedCategories.ToArray());
         Assert.Equal("jfStopped", journal.Configuration.MarkerTag);
+        Assert.Equal(["cross-seed", "manual"], journal.Configuration.ExclusionTags.ToArray());
         Assert.Equal(TimeSpan.FromSeconds(75), journal.Configuration.ReleaseGrace);
         Assert.Equal("https", journal.Endpoint.Scheme);
         Assert.Equal("qbit.internal", journal.Endpoint.Host);
@@ -75,7 +77,7 @@ public sealed class ConfiguredActivationJournalFactoryTests
             IncludeIncomplete = true,
             IncludeCompleted = false,
             MarkerTag = "jfStopped",
-            NeverTouchTag = "jfNeverTouch",
+            ExclusionTags = ["manual", "cross-seed"],
             ReleaseGraceSeconds = 75,
         };
     }

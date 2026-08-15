@@ -494,7 +494,7 @@ public sealed class AlternativeLimitsActionServiceTests
                 IncludeIncomplete: true,
                 IncludeCompleted: true,
                 MarkerTag: "jfStopped",
-                NeverTouchTag: "jfNeverTouch",
+                ExclusionTags: ["jfNeverTouch"],
                 ReleaseGrace: TimeSpan.FromSeconds(60)),
             Endpoint: new QbittorrentEndpointIdentity("http", "qbittorrent", 8080, "/"),
             AlternativeLimits: new AlternativeLimitsJournalState(
@@ -611,6 +611,9 @@ public sealed class AlternativeLimitsActionServiceTests
         }
 
         public Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
         public Task AddTagAsync(

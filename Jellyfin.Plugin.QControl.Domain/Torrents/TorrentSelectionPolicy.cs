@@ -10,6 +10,12 @@ namespace Jellyfin.Plugin.QControl.Domain.Torrents;
 /// </summary>
 public sealed record TorrentSelectionPolicy
 {
+    /// <summary>The maximum number of configured exclusion tags.</summary>
+    public const int MaximumExclusionTagCount = 64;
+
+    /// <summary>The maximum normalized length of one exclusion tag.</summary>
+    public const int MaximumTagLength = 128;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TorrentSelectionPolicy"/> class.
     /// </summary>
@@ -18,16 +24,17 @@ public sealed record TorrentSelectionPolicy
     /// <param name="includeIncomplete">Whether incomplete torrents qualify.</param>
     /// <param name="includeCompleted">Whether completed torrents qualify.</param>
     /// <param name="markerTag">The activation marker tag.</param>
-    /// <param name="neverTouchTag">The dominant exclusion tag.</param>
+    /// <param name="exclusionTags">The dominant exclusion tags.</param>
     public TorrentSelectionPolicy(
         TorrentScope scope,
         IEnumerable<string> selectedCategories,
         bool includeIncomplete,
         bool includeCompleted,
         string markerTag,
-        string neverTouchTag)
+        IEnumerable<string> exclusionTags)
     {
         ArgumentNullException.ThrowIfNull(selectedCategories);
+        ArgumentNullException.ThrowIfNull(exclusionTags);
         if (!Enum.IsDefined(scope))
         {
             throw new ArgumentOutOfRangeException(nameof(scope), scope, "Unknown torrent scope.");
@@ -43,16 +50,6 @@ public sealed record TorrentSelectionPolicy
             throw new ArgumentException("Marker tag cannot be empty.", nameof(markerTag));
         }
 
-        if (string.IsNullOrWhiteSpace(neverTouchTag))
-        {
-            throw new ArgumentException("Never-touch tag cannot be empty.", nameof(neverTouchTag));
-        }
-
-        if (string.Equals(markerTag, neverTouchTag, StringComparison.Ordinal))
-        {
-            throw new ArgumentException("Marker and never-touch tags must be distinct.");
-        }
-
         var categories = selectedCategories.ToFrozenSet(StringComparer.Ordinal);
         if (categories.Any(string.IsNullOrWhiteSpace))
         {
@@ -66,12 +63,20 @@ public sealed record TorrentSelectionPolicy
                 nameof(selectedCategories));
         }
 
+        var exclusions = NormalizeExclusionTags(exclusionTags)
+            .ToFrozenSet(StringComparer.Ordinal);
+
+        if (exclusions.Contains(markerTag))
+        {
+            throw new ArgumentException("Marker tag cannot also be an exclusion tag.");
+        }
+
         Scope = scope;
         SelectedCategories = categories;
         IncludeIncomplete = includeIncomplete;
         IncludeCompleted = includeCompleted;
         MarkerTag = markerTag;
-        NeverTouchTag = neverTouchTag;
+        ExclusionTags = exclusions;
     }
 
     /// <summary>
@@ -100,7 +105,55 @@ public sealed record TorrentSelectionPolicy
     public string MarkerTag { get; }
 
     /// <summary>
-    /// Gets the dominant exclusion tag.
+    /// Gets the dominant exclusion tags.
     /// </summary>
-    public string NeverTouchTag { get; }
+    public IReadOnlySet<string> ExclusionTags { get; }
+
+    /// <summary>
+    /// Normalizes and validates one administrator-supplied exclusion list.
+    /// </summary>
+    /// <param name="exclusionTags">The supplied exact tags.</param>
+    /// <returns>Unique normalized tags in deterministic ordinal order.</returns>
+    public static IReadOnlyList<string> NormalizeExclusionTags(IEnumerable<string> exclusionTags)
+    {
+        ArgumentNullException.ThrowIfNull(exclusionTags);
+        var normalized = exclusionTags
+            .Select(tag => (tag ?? string.Empty).Trim())
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (normalized.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException("Exclusion tags cannot be empty.", nameof(exclusionTags));
+        }
+
+        if (normalized.Length > MaximumExclusionTagCount)
+        {
+            throw new ArgumentException(
+                $"At most {MaximumExclusionTagCount} exclusion tags are allowed.",
+                nameof(exclusionTags));
+        }
+
+        if (normalized.Any(tag => tag.Length > MaximumTagLength
+                || tag.Contains(',', StringComparison.Ordinal)
+                || tag.Any(char.IsControl)))
+        {
+            throw new ArgumentException(
+                "Exclusion tags cannot exceed the length limit or contain delimiters or controls.",
+                nameof(exclusionTags));
+        }
+
+        return Array.AsReadOnly(normalized);
+    }
+
+    /// <summary>
+    /// Determines whether any configured exclusion tag is present.
+    /// </summary>
+    /// <param name="torrent">The neutral torrent snapshot.</param>
+    /// <returns><see langword="true"/> when the torrent is excluded.</returns>
+    public bool IsExcluded(TorrentSnapshot torrent)
+    {
+        ArgumentNullException.ThrowIfNull(torrent);
+        return torrent.Tags.Any(ExclusionTags.Contains);
+    }
 }

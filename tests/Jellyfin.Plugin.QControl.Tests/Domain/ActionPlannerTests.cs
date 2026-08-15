@@ -204,7 +204,7 @@ public sealed class ActionPlannerTests
             includeIncomplete: true,
             includeCompleted: true,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch");
+            exclusionTags: ["jfNeverTouch"]);
     }
 
     private static TorrentSnapshot Torrent(

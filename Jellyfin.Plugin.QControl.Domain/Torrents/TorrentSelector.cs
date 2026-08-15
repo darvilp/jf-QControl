@@ -25,7 +25,7 @@ public static class TorrentSelector
         var selectedHashes = torrents
             .Where(torrent => IsInScope(torrent, policy))
             .Where(torrent => LifecycleQualifies(torrent, policy))
-            .Where(torrent => !torrent.Tags.Contains(policy.NeverTouchTag))
+            .Where(torrent => !policy.IsExcluded(torrent))
             .Where(torrent => !torrent.IsStopped)
             .Select(torrent => torrent.Hash)
             .Distinct(StringComparer.Ordinal)

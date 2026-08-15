@@ -10,6 +10,15 @@ namespace Jellyfin.Plugin.QControl.Tests;
 public sealed class PluginConfigurationContractTests
 {
     [Fact]
+    public void FreshConfigurationUsesNamespacedTagPolicy()
+    {
+        var configuration = new PluginConfiguration();
+
+        Assert.Equal("qcontrol-resume", configuration.MarkerTag);
+        Assert.Equal(["qcontrol-ignore"], configuration.ExclusionTags);
+    }
+
+    [Fact]
     public void DefaultConfigurationRoundTripsItsSchemaVersion()
     {
         var schemaVersion = typeof(PluginConfiguration).GetProperty("SchemaVersion");

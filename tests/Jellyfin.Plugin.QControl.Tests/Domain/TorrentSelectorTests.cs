@@ -36,7 +36,7 @@ public sealed class TorrentSelectorTests
             includeIncomplete: true,
             includeCompleted: true,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch");
+            exclusionTags: ["jfNeverTouch"]);
 
         var hashes = TorrentSelector.SelectForAcquisition(torrents, policy);
 
@@ -57,7 +57,7 @@ public sealed class TorrentSelectorTests
             includeIncomplete: false,
             includeCompleted: true,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch");
+            exclusionTags: ["jfNeverTouch"]);
 
         var hashes = TorrentSelector.SelectForAcquisition(torrents, completedOnly);
 
@@ -78,7 +78,7 @@ public sealed class TorrentSelectorTests
             includeIncomplete: true,
             includeCompleted: false,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch");
+            exclusionTags: ["jfNeverTouch"]);
 
         var hashes = TorrentSelector.SelectForAcquisition(torrents, policy);
 
@@ -121,6 +121,73 @@ public sealed class TorrentSelectorTests
     }
 
     [Fact]
+    public void AnyConfiguredExclusionTagWinsAndAnEmptyListExcludesNothing()
+    {
+        TorrentSnapshot[] torrents =
+        [
+            Torrent("manual", category: null, remainingBytes: 10, tags: ["manual"]),
+            Torrent("cross-seed", category: null, remainingBytes: 10, tags: ["cross-seed"]),
+            Torrent("ordinary", category: null, remainingBytes: 10),
+        ];
+        var exclusions = new TorrentSelectionPolicy(
+            TorrentScope.All,
+            [],
+            includeIncomplete: true,
+            includeCompleted: true,
+            markerTag: "qcontrol-resume",
+            exclusionTags: ["manual", "cross-seed"]);
+        var noExclusions = new TorrentSelectionPolicy(
+            TorrentScope.All,
+            [],
+            includeIncomplete: true,
+            includeCompleted: true,
+            markerTag: "qcontrol-resume",
+            exclusionTags: []);
+
+        Assert.Equal(["ordinary"], TorrentSelector.SelectForAcquisition(torrents, exclusions));
+        Assert.Equal(
+            ["cross-seed", "manual", "ordinary"],
+            TorrentSelector.SelectForAcquisition(torrents, noExclusions));
+    }
+
+    [Fact]
+    public void ExclusionTagsNormalizeBoundariesAndExactDuplicatesOnly()
+    {
+        var policy = new TorrentSelectionPolicy(
+            TorrentScope.All,
+            [],
+            includeIncomplete: true,
+            includeCompleted: true,
+            markerTag: "qcontrol-resume",
+            exclusionTags: [" manual ", "manual", "Manual", "Do Not Stop"]);
+
+        Assert.Equal(3, policy.ExclusionTags.Count);
+        Assert.Contains("manual", policy.ExclusionTags);
+        Assert.Contains("Manual", policy.ExclusionTags);
+        Assert.Contains("Do Not Stop", policy.ExclusionTags);
+        Assert.DoesNotContain(" manual ", policy.ExclusionTags);
+    }
+
+    [Fact]
+    public void InvalidOrUnboundedTagPoliciesAreRejected()
+    {
+        AssertInvalidExclusions(["blank", " "]);
+        AssertInvalidExclusions(["comma,delimiter"]);
+        AssertInvalidExclusions(["line\nbreak"]);
+        AssertInvalidExclusions(["control\u0001character"]);
+        AssertInvalidExclusions([new string('x', 129)]);
+
+        var tooMany = new string[65];
+        for (var index = 0; index < tooMany.Length; index++)
+        {
+            tooMany[index] = $"tag-{index}";
+        }
+
+        AssertInvalidExclusions(tooMany);
+        AssertInvalidExclusions(["qcontrol-resume"]);
+    }
+
+    [Fact]
     public void InvalidLifecycleAndTagPoliciesAreRejected()
     {
         Assert.Throws<ArgumentException>(() => new TorrentSelectionPolicy(
@@ -129,7 +196,7 @@ public sealed class TorrentSelectorTests
             includeIncomplete: false,
             includeCompleted: false,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch"));
+            exclusionTags: ["jfNeverTouch"]));
 
         Assert.Throws<ArgumentException>(() => new TorrentSelectionPolicy(
             TorrentScope.All,
@@ -137,7 +204,7 @@ public sealed class TorrentSelectorTests
             includeIncomplete: true,
             includeCompleted: true,
             markerTag: "same",
-            neverTouchTag: "same"));
+            exclusionTags: ["same"]));
     }
 
     [Fact]
@@ -157,7 +224,18 @@ public sealed class TorrentSelectorTests
             includeIncomplete: true,
             includeCompleted: true,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch");
+            exclusionTags: ["jfNeverTouch"]);
+    }
+
+    private static void AssertInvalidExclusions(string[] exclusionTags)
+    {
+        Assert.Throws<ArgumentException>(() => new TorrentSelectionPolicy(
+            TorrentScope.All,
+            [],
+            includeIncomplete: true,
+            includeCompleted: true,
+            markerTag: "qcontrol-resume",
+            exclusionTags));
     }
 
     private static TorrentSnapshot Torrent(

@@ -245,7 +245,7 @@ public sealed class StopTorrentsActionService : IStopTorrentsActionService, IDis
             configuration.IncludeIncomplete,
             configuration.IncludeCompleted,
             configuration.MarkerTag,
-            configuration.NeverTouchTag);
+            configuration.ExclusionTags);
     }
 
     private static ActivationJournalDocument UpsertMarkerIntents(
@@ -331,7 +331,7 @@ public sealed class StopTorrentsActionService : IStopTorrentsActionService, IDis
         var entries = journal.Torrents.ToDictionary(entry => entry.Hash, StringComparer.Ordinal);
         foreach (var torrent in torrents
                      .Where(item => item.Tags.Contains(policy.MarkerTag))
-                     .Where(item => !item.Tags.Contains(policy.NeverTouchTag)))
+                     .Where(item => !policy.IsExcluded(item)))
         {
             if (!entries.TryGetValue(torrent.Hash, out var entry))
             {
@@ -360,7 +360,7 @@ public sealed class StopTorrentsActionService : IStopTorrentsActionService, IDis
     {
         var confirmedHashes = torrents
             .Where(torrent => torrent.Tags.Contains(policy.MarkerTag))
-            .Where(torrent => !torrent.Tags.Contains(policy.NeverTouchTag))
+            .Where(torrent => !policy.IsExcluded(torrent))
             .Where(torrent => !torrent.IsStopped)
             .Select(torrent => torrent.Hash);
         return SetStage(

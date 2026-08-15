@@ -16,3 +16,7 @@ The public issues are:
 8. [Configuration, status, and recovery API](https://github.com/darvilp/jf-QControl/issues/8)
 9. [Administrator dashboard](https://github.com/darvilp/jf-QControl/issues/9)
 10. [Container proof and release hardening](https://github.com/darvilp/jf-QControl/issues/10)
+
+The next local implementation specification has not yet been filed publicly:
+
+- [Creatable Exclusion Tag List](011-exclusion-tag-list.md)

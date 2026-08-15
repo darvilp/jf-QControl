@@ -288,7 +288,7 @@ public sealed class RecoveryService
         var torrents = await client.GetTorrentsAsync(cancellationToken).ConfigureAwait(false);
         return !torrents.Any(torrent =>
             torrent.Tags.Contains(document.Configuration.MarkerTag)
-            && !torrent.Tags.Contains(document.Configuration.NeverTouchTag));
+            && !torrent.Tags.Any(document.Configuration.ExclusionTags.Contains));
     }
 
     private ActivationJournalDocument? CreateManualTorrentRecoveryDocument()
@@ -316,7 +316,7 @@ public sealed class RecoveryService
                 true,
                 true,
                 configuration.MarkerTag,
-                configuration.NeverTouchTag,
+                (configuration.ExclusionTags ?? []).ToImmutableArray(),
                 TimeSpan.Zero),
             new QbittorrentEndpointIdentity(
                 endpoint.Scheme,

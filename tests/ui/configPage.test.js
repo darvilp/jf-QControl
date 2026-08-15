@@ -7,6 +7,7 @@ import createPageController, {
     createAnnouncementGate,
     formatOperationalStatus,
     mergeCategoryChoices,
+    mergeTagSuggestions,
     recoveryCommand,
     validateEditor
 } from '../../Jellyfin.Plugin.QControl/Configuration/configPage.js';
@@ -85,6 +86,7 @@ class FakeView {
             'test-connection',
             'set-api-key',
             'set-secret-file',
+            'add-exclusion-tag',
             'save-configuration',
             'resume-marked',
             'restore-speed',
@@ -139,8 +141,8 @@ function configuration(overrides = {}) {
         SelectedCategories: [],
         IncludeIncomplete: true,
         IncludeCompleted: true,
-        MarkerTag: 'jfStopped',
-        NeverTouchTag: 'jfNeverTouch',
+        MarkerTag: 'qcontrol-resume',
+        ExclusionTags: ['qcontrol-ignore'],
         ReleaseGraceSeconds: 60,
         ...overrides
     };
@@ -212,6 +214,12 @@ test('category choices retain configured values that discovery no longer returns
         ]);
 });
 
+test('tag suggestions use the whole global catalog and retain configured custom values', () => {
+    assert.deepEqual(
+        mergeTagSuggestions(['manual', 'cross-seed', 'manual'], ['qcontrol-ignore', 'manual']),
+        ['cross-seed', 'manual', 'qcontrol-ignore']);
+});
+
 test('candidate carries only write-only credential controls and supports source switching', () => {
     const candidate = buildConfigurationCandidate({
         revision: 7,
@@ -226,8 +234,8 @@ test('candidate carries only write-only credential controls and supports source 
         selectedCategories: ['sonarr'],
         includeIncomplete: true,
         includeCompleted: false,
-        markerTag: 'jfStopped',
-        neverTouchTag: 'jfNeverTouch',
+        markerTag: 'qcontrol-resume',
+        exclusionTags: [' manual ', 'qcontrol-ignore', 'manual'],
         releaseGraceSeconds: '60'
     });
 
@@ -237,6 +245,8 @@ test('candidate carries only write-only credential controls and supports source 
     assert.equal(candidate.ClearStoredApiKey, true);
     assert.equal(candidate.StopScope, 1);
     assert.deepEqual(candidate.SelectedCategories, ['sonarr']);
+    assert.deepEqual(candidate.ExclusionTags, ['manual', 'qcontrol-ignore']);
+    assert.equal('NeverTouchTag' in candidate, false);
     assert.equal('QbittorrentApiKey' in candidate, false);
     assert.doesNotMatch(JSON.stringify(candidate), /qbt_/i);
 });
@@ -246,14 +256,14 @@ test('editor shape blocks an unusable stop configuration without replacing serve
         stopTorrentsEnabled: true,
         includeIncomplete: false,
         includeCompleted: false,
-        markerTag: 'jfStopped',
-        neverTouchTag: 'jfNeverTouch',
+        markerTag: 'qcontrol-resume',
+        exclusionTags: ['qcontrol-ignore'],
         stopScope: 0,
         selectedCategories: []
     };
 
     assert.match(validateEditor(base), /completed or incomplete/i);
-    assert.match(validateEditor({ ...base, includeIncomplete: true, markerTag: 'same', neverTouchTag: 'same' }), /different/i);
+    assert.match(validateEditor({ ...base, includeIncomplete: true, markerTag: 'same', exclusionTags: ['same'] }), /different/i);
     assert.equal(validateEditor({ ...base, includeIncomplete: true }), null);
 });
 
@@ -336,6 +346,72 @@ test('loading a stored credential exposes presence but never its content', async
     assert.match(apiKey.placeholder, /configured/i);
     assert.match(view.querySelector('#qControlApiKeyHelp').textContent, /Set API key/i);
     assert.doesNotMatch(JSON.stringify(calls), /qbt_/i);
+});
+
+test('exclusion tag edits are staged until Save configuration and use catalog suggestions', async () => {
+    const { calls, view } = createHarness(async (path, method, body) => {
+        if (path === 'QControl/Configuration' && method === 'GET') {
+            return configuration();
+        }
+
+        if (path === 'QControl/Status') {
+            return operationalStatus();
+        }
+
+        if (path === 'QControl/Connection/Categories') {
+            return {
+                IsConnected: true,
+                Categories: [],
+                Tags: ['cross-seed', 'manual'],
+                IsTagCatalogAvailable: true
+            };
+        }
+
+        if (path === 'QControl/Configuration' && method === 'PUT') {
+            return {
+                Outcome: 'Accepted',
+                Configuration: configuration({ Revision: 5, ExclusionTags: body.ExclusionTags })
+            };
+        }
+
+        return {};
+    });
+    await view.dispatch('viewshow');
+
+    assert.match(view.querySelector('#qControlExclusionTagSuggestions').innerHTML, /cross-seed/);
+    view.querySelector('#qControlExclusionTagInput').value = ' manual ';
+    await view.dispatch('click', view.querySelector('[data-action="add-exclusion-tag"]'));
+
+    assert.equal(calls.some(call => call.path === 'QControl/Configuration' && call.method === 'PUT'), false);
+    assert.match(view.querySelector('#qControlExclusionTagList').innerHTML, /manual/);
+
+    await view.dispatch('click', view.querySelector('[data-action="save-configuration"]'));
+
+    const request = calls.find(call => call.path === 'QControl/Configuration' && call.method === 'PUT');
+    assert.deepEqual(request.body.ExclusionTags, ['manual', 'qcontrol-ignore']);
+});
+
+test('missing global tag catalog is nonblocking and keeps configured custom tags', async () => {
+    const { view } = createHarness(async (path, method) => {
+        if (path === 'QControl/Configuration' && method === 'GET') {
+            return configuration({ ExclusionTags: ['custom-ignore'] });
+        }
+
+        if (path === 'QControl/Status') {
+            return operationalStatus();
+        }
+
+        if (path === 'QControl/Connection/Categories') {
+            return { IsConnected: true, Categories: [], Tags: [], IsTagCatalogAvailable: false };
+        }
+
+        return {};
+    });
+    await view.dispatch('viewshow');
+
+    assert.match(view.querySelector('#qControlExclusionTagList').innerHTML, /custom-ignore/);
+    assert.match(view.querySelector('#qControlTagCatalogStatus').textContent, /temporarily unavailable/i);
+    assert.equal(view.querySelector('[data-action="save-configuration"]').disabled, false);
 });
 
 test('Set API key explicitly persists the connection without saving unrelated edits', async () => {

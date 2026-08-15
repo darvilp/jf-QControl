@@ -70,11 +70,12 @@ public sealed class QbittorrentEndpointContractTests
     }
 
     [Fact]
-    public async Task CategoryAndAlternativeLimitsReadsAreTypedAndDeterministic()
+    public async Task CategoryTagAndAlternativeLimitsReadsAreTypedAndDeterministic()
     {
         using var handler = new EndpointHandler(path => path switch
         {
             "/api/v2/torrents/categories" => "{\"sonarr\":{},\"TV Épisodes\":{},\"radarr\":{}}",
+            "/api/v2/torrents/tags" => "[\"manual\",\"Cross Seed\",\"manual\"]",
             "/api/v2/transfer/speedLimitsMode" => "1",
             _ => throw new InvalidOperationException("Unexpected endpoint."),
         });
@@ -84,11 +85,15 @@ public sealed class QbittorrentEndpointContractTests
         var categories = await client
             .GetCategoriesAsync(CancellationToken.None)
             .ConfigureAwait(true);
+        var tags = await client
+            .GetTagsAsync(CancellationToken.None)
+            .ConfigureAwait(true);
         var alternativeLimits = await client
             .GetAlternativeLimitsEnabledAsync(CancellationToken.None)
             .ConfigureAwait(true);
 
         Assert.Equal(["TV Épisodes", "radarr", "sonarr"], categories);
+        Assert.Equal(["Cross Seed", "manual"], tags);
         Assert.True(alternativeLimits);
     }
 

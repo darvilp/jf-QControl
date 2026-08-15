@@ -87,12 +87,16 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets the restart-intent marker tag.
     /// </summary>
-    public string MarkerTag { get; set; } = "jfStopped";
+    public string MarkerTag { get; set; } = "qcontrol-resume";
 
     /// <summary>
-    /// Gets or sets the dominant exclusion tag.
+    /// Gets or sets the exact dominant exclusion tags.
     /// </summary>
-    public string NeverTouchTag { get; set; } = "jfNeverTouch";
+    [SuppressMessage(
+        "Performance",
+        "CA1819:Properties should not return arrays",
+        Justification = "Jellyfin plugin configuration requires a simple settable serializer DTO.")]
+    public string[] ExclusionTags { get; set; } = ["qcontrol-ignore"];
 
     /// <summary>
     /// Gets or sets the complete-absence release grace in seconds.

@@ -112,7 +112,7 @@ all_expected_protected() {
         --argjson expected "${expected_hashes_json}" \
         'all(.[]; . as $torrent | (($expected | index($torrent.hash)) == null)
             or (($torrent.state | startswith("stopped"))
-                and ($torrent.tags | split(", ") | index("jfStopped") != null)))' \
+                and ($torrent.tags | split(", ") | index("qcontrol-resume") != null)))' \
         <<<"${torrents}" >/dev/null
 }
 
@@ -123,7 +123,7 @@ all_expected_restored() {
         --argjson expected "${expected_hashes_json}" \
         'all(.[]; . as $torrent | (($expected | index($torrent.hash)) == null)
             or (($torrent.state | startswith("stopped") | not)
-                and ($torrent.tags | split(", ") | index("jfStopped") == null)))' \
+                and ($torrent.tags | split(", ") | index("qcontrol-resume") == null)))' \
         <<<"${torrents}" >/dev/null
 }
 
@@ -162,7 +162,7 @@ admin_items="$(admin_get 'Items?Recursive=true&IncludeItemTypes=Movie')"
 movie_id="$(jq --exit-status --raw-output '.Items[0].Id' <<<"${admin_items}")"
 
 candidate="$(jq --null-input \
-    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:1,secretFilePath:"/run/secrets/qbittorrent-api-key",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:true,stopTorrentsEnabled:true,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"jfStopped",neverTouchTag:"jfNeverTouch",releaseGraceSeconds:5}')"
+    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:1,secretFilePath:"/run/secrets/qbittorrent-api-key",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:true,stopTorrentsEnabled:true,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"qcontrol-resume",exclusionTags:["qcontrol-ignore"],releaseGraceSeconds:5}')"
 curl --fail --silent --show-error \
     --request POST \
     --header "X-Emby-Token: ${admin_token}" \
@@ -183,7 +183,7 @@ initial_limits="$(qbit_get transfer/speedLimitsMode)"
 expected_hashes_json="$(jq \
     '[.[]
       | select((.state | startswith("stopped") | not)
-          and (.tags | split(", ") | index("jfNeverTouch") == null))
+          and (.tags | split(", ") | index("qcontrol-ignore") == null))
       | .hash]
      | sort' <<<"${initial_torrents}")"
 test "$(jq length <<<"${expected_hashes_json}")" -gt 0

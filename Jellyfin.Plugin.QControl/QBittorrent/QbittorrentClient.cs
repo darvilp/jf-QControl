@@ -138,6 +138,33 @@ public sealed class QbittorrentClient : IQbittorrentClient
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<string>> GetTagsAsync(
+        CancellationToken cancellationToken)
+    {
+        var content = await GetTextAsync("torrents/tags", cancellationToken)
+            .ConfigureAwait(false);
+
+        try
+        {
+            var response = JsonSerializer.Deserialize<string[]>(content);
+            if (response is null || response.Any(string.IsNullOrWhiteSpace))
+            {
+                throw InvalidResponse();
+            }
+
+            var tags = response
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+            return Array.AsReadOnly(tags);
+        }
+        catch (JsonException)
+        {
+            throw InvalidResponse();
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<bool> GetAlternativeLimitsEnabledAsync(
         CancellationToken cancellationToken)
     {

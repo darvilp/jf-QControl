@@ -47,7 +47,7 @@ scripts/test-issue-005.sh
 Its action contract uses the production client, physical journal store, and
 serialized Stop Torrents service against the six real qBittorrent fixtures. It
 protects every initially running non-excluded hash, proves already-stopped and
-Never-touch fixtures remain untouched, restores only marked hashes, and then
+Excluded fixtures remain untouched, restores only marked hashes, and then
 returns the fixture to its initial stopped/running shape.
 
 Run both production protection actions, including real Alternative Limits
@@ -225,7 +225,7 @@ Stable real-container fixtures include:
 | Incomplete/downloading | Payload absent; local throttled web seed available |
 | Incomplete/queued | Active-download limit plus several local web-seed torrents |
 | Category scope | Assign `sonarr` and `radarr`; compatibility probes also round-trip spaces and non-ASCII names |
-| Marker/exclusion | Assign configured Marker or Never-touch Tags |
+| Marker/exclusion | Assign the configured Marker Tag or any Exclusion Tag |
 
 The suite polls qBittorrent with bounded deadlines and asserts each fixture's
 precondition before exercising QControl. Fixed sleeps are not acceptance proof.

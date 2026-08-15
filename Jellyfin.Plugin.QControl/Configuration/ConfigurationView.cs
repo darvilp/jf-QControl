@@ -19,7 +19,7 @@ namespace Jellyfin.Plugin.QControl.Configuration;
 /// <param name="IncludeIncomplete">Whether incomplete torrents qualify.</param>
 /// <param name="IncludeCompleted">Whether completed torrents qualify.</param>
 /// <param name="MarkerTag">The restart marker tag.</param>
-/// <param name="NeverTouchTag">The exclusion tag.</param>
+/// <param name="ExclusionTags">The exact dominant exclusion tags.</param>
 /// <param name="ReleaseGraceSeconds">The release grace.</param>
 public sealed record ConfigurationView(
     long Revision,
@@ -35,5 +35,5 @@ public sealed record ConfigurationView(
     bool IncludeIncomplete,
     bool IncludeCompleted,
     string MarkerTag,
-    string NeverTouchTag,
+    IReadOnlyList<string> ExclusionTags,
     int ReleaseGraceSeconds);

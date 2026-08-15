@@ -55,7 +55,9 @@ public sealed class ActivationJournalRoundTripTests
                 actual.Configuration.IncludeIncomplete);
             Assert.Equal(expected.Configuration.IncludeCompleted, actual.Configuration.IncludeCompleted);
             Assert.Equal(expected.Configuration.MarkerTag, actual.Configuration.MarkerTag);
-            Assert.Equal(expected.Configuration.NeverTouchTag, actual.Configuration.NeverTouchTag);
+            Assert.Equal(
+                expected.Configuration.ExclusionTags.ToArray(),
+                actual.Configuration.ExclusionTags.ToArray());
             Assert.Equal(expected.Configuration.ReleaseGrace, actual.Configuration.ReleaseGrace);
             Assert.Equal(expected.Endpoint, actual.Endpoint);
             Assert.Equal(expected.AlternativeLimits, actual.AlternativeLimits);

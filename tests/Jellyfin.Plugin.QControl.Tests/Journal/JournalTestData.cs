@@ -25,7 +25,7 @@ internal static class JournalTestData
                 IncludeIncomplete: true,
                 IncludeCompleted: true,
                 MarkerTag: "jfStopped",
-                NeverTouchTag: "jfNeverTouch",
+                ExclusionTags: ["jfNeverTouch"],
                 ReleaseGrace: TimeSpan.FromSeconds(60)),
             Endpoint: new QbittorrentEndpointIdentity("http", "qbittorrent", 18180, "/control"),
             AlternativeLimits: new AlternativeLimitsJournalState(

@@ -17,7 +17,7 @@ public sealed class PluginConfigurationMigrationTests
             AlternativeLimitsEnabled = true,
             StopTorrentsEnabled = true,
             MarkerTag = string.Empty,
-            NeverTouchTag = string.Empty,
+            ExclusionTags = null!,
         };
 
         var migrated = PluginConfigurationMigrator.Normalize(legacy, out var changed);
@@ -28,8 +28,8 @@ public sealed class PluginConfigurationMigrationTests
         Assert.False(migrated.ConnectionValidated);
         Assert.False(migrated.AlternativeLimitsEnabled);
         Assert.False(migrated.StopTorrentsEnabled);
-        Assert.Equal("jfStopped", migrated.MarkerTag);
-        Assert.Equal("jfNeverTouch", migrated.NeverTouchTag);
+        Assert.Equal("qcontrol-resume", migrated.MarkerTag);
+        Assert.Equal(["qcontrol-ignore"], migrated.ExclusionTags);
         Assert.Equal(60, migrated.ReleaseGraceSeconds);
     }
 

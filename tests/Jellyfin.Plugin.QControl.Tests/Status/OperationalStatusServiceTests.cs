@@ -34,7 +34,7 @@ public sealed class OperationalStatusServiceTests
             [
                 Torrent("a", stopped: false, amountLeft: 5),
                 Torrent("b", stopped: true, amountLeft: 0, "jfStopped"),
-                Torrent("c", stopped: false, amountLeft: 0, "jfNeverTouch"),
+                Torrent("c", stopped: false, amountLeft: 0, "manual"),
             ],
             AlternativeLimitsEnabled = true,
         };
@@ -167,7 +167,7 @@ public sealed class OperationalStatusServiceTests
             IncludeIncomplete = true,
             IncludeCompleted = true,
             MarkerTag = "jfStopped",
-            NeverTouchTag = "jfNeverTouch",
+            ExclusionTags = ["jfNeverTouch", "manual"],
             ReleaseGraceSeconds = 60,
         };
     }
@@ -189,7 +189,7 @@ public sealed class OperationalStatusServiceTests
                 true,
                 true,
                 "jfStopped",
-                "jfNeverTouch",
+                ["jfNeverTouch", "manual"],
                 TimeSpan.FromSeconds(60)),
             new QbittorrentEndpointIdentity("http", "qbit", 8080, "/"),
             new AlternativeLimitsJournalState(
@@ -307,6 +307,9 @@ public sealed class OperationalStatusServiceTests
         }
 
         public Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
         public Task AddTagAsync(IEnumerable<string> hashes, string tag, CancellationToken cancellationToken) =>

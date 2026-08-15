@@ -32,6 +32,13 @@ public interface IQbittorrentClient
     Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// Lists all exact registered tag names.
+    /// </summary>
+    /// <param name="cancellationToken">Caller cancellation.</param>
+    /// <returns>Deterministic exact registered tag names.</returns>
+    Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Reads whether Alternative Limits mode is enabled.
     /// </summary>
     /// <param name="cancellationToken">Caller cancellation.</param>

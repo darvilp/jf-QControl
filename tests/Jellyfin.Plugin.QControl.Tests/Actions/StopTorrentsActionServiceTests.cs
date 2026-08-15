@@ -117,7 +117,8 @@ public sealed class StopTorrentsActionServiceTests
             new TorrentSnapshot("excluded-category", "sonarr", 1, false, []),
             new TorrentSnapshot("excluded-case", "Radarr", 1, false, []),
             new TorrentSnapshot("excluded-stopped", "radarr", 1, true, []),
-            new TorrentSnapshot("excluded-tag", "radarr", 1, false, ["jfNeverTouch"]));
+            new TorrentSnapshot("excluded-tag", "radarr", 1, false, ["jfNeverTouch"]),
+            new TorrentSnapshot("excluded-secondary-tag", "radarr", 1, false, ["manual"]));
         var journal = new RecordingJournalStore(events);
         using var service = new StopTorrentsActionService(qbit, journal);
         var document = CreateDocument() with
@@ -139,6 +140,7 @@ public sealed class StopTorrentsActionServiceTests
         Assert.False(qbit.IsStopped("excluded-category"));
         Assert.False(qbit.IsStopped("excluded-case"));
         Assert.False(qbit.IsStopped("excluded-tag"));
+        Assert.False(qbit.IsStopped("excluded-secondary-tag"));
     }
 
     [Fact]
@@ -459,7 +461,7 @@ public sealed class StopTorrentsActionServiceTests
                 IncludeIncomplete: true,
                 IncludeCompleted: true,
                 MarkerTag: "jfStopped",
-                NeverTouchTag: "jfNeverTouch",
+                ExclusionTags: ["jfNeverTouch", "manual"],
                 ReleaseGrace: TimeSpan.FromSeconds(60)),
             Endpoint: new QbittorrentEndpointIdentity("http", "qbittorrent", 8080, "/"),
             AlternativeLimits: new AlternativeLimitsJournalState(
@@ -624,6 +626,9 @@ public sealed class StopTorrentsActionServiceTests
             throw new NotSupportedException();
 
         public Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
         public Task<bool> GetAlternativeLimitsEnabledAsync(CancellationToken cancellationToken) =>

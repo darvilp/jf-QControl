@@ -59,7 +59,9 @@ public sealed class ConfiguredActivationJournalFactory : IActivationJournalFacto
                 configuration.IncludeIncomplete,
                 configuration.IncludeCompleted,
                 configuration.MarkerTag,
-                configuration.NeverTouchTag,
+                (configuration.ExclusionTags ?? [])
+                    .Order(StringComparer.Ordinal)
+                    .ToImmutableArray(),
                 TimeSpan.FromSeconds(configuration.ReleaseGraceSeconds)),
             Endpoint: new QbittorrentEndpointIdentity(
                 endpoint.Scheme,

@@ -72,6 +72,8 @@ test('administrator configures the real page without credential round-trip', asy
     expect(connectionCandidate.SecretFilePath).toBe('/run/secrets/qbittorrent-api-key');
     expect(connectionCandidate.ApiKeyReplacement).toBe('');
     await expect(page.locator('#qControlConnectionStatus')).toContainText(/connected to qBittorrent 5\.2\.3/i);
+    await expect(page.locator('#qControlExclusionTagSuggestions option[value="fixture"]')).toHaveCount(1);
+    await expect(page.locator('#qControlExclusionTagSuggestions option[value="qcontrol-ignore"]')).toHaveCount(1);
 
     await page.getByRole('button', { name: 'Set file path' }).click();
     await expect(page.locator('#qControlConnectionStatus')).toContainText(/file path set and saved/i);
@@ -84,8 +86,15 @@ test('administrator configures the real page without credential round-trip', asy
     await expect(page.locator('#qControlCategorySelection')).toBeVisible();
     await page.getByText('radarr', { exact: true }).click();
     await expect(page.getByLabel('radarr', { exact: true })).toBeChecked();
+    await page.locator('#qControlExclusionTagInput').fill('browser-custom-ignore');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(page.locator('#qControlExclusionTagList')).toContainText('browser-custom-ignore');
     await page.locator('#qControlReleaseGraceSeconds').fill('1');
+    const saveRequestPromise = page.waitForRequest(request =>
+        request.method() === 'PUT' && request.url().includes('/QControl/Configuration'));
     await page.getByRole('button', { name: 'Save configuration' }).click();
+    const saveCandidate = (await saveRequestPromise).postDataJSON();
+    expect(saveCandidate.ExclusionTags).toEqual(['browser-custom-ignore', 'qcontrol-ignore']);
     await expect(page.locator('#qControlConfigurationStatus')).toContainText(/configuration saved/i);
     await expect(page.locator('#qControlApiKey')).toHaveValue('');
     expect(consoleText.join('\n')).not.toMatch(/qbt_/i);

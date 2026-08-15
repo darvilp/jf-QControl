@@ -184,6 +184,9 @@ public sealed class ConfigurationService : IDisposable
         var categories = candidate.SelectedCategories ?? [];
         try
         {
+            var markerTag = candidate.MarkerTag.Trim();
+            var exclusions = TorrentSelectionPolicy.NormalizeExclusionTags(
+                candidate.ExclusionTags ?? []);
             if (candidate.StopTorrentsEnabled)
             {
                 _ = new TorrentSelectionPolicy(
@@ -191,8 +194,8 @@ public sealed class ConfigurationService : IDisposable
                     categories,
                     candidate.IncludeIncomplete,
                     candidate.IncludeCompleted,
-                    candidate.MarkerTag,
-                    candidate.NeverTouchTag);
+                    markerTag,
+                    exclusions);
             }
 
             var hasEnabledAction = candidate.AlternativeLimitsEnabled
@@ -250,8 +253,8 @@ public sealed class ConfigurationService : IDisposable
                     .ToArray(),
                 IncludeIncomplete = candidate.IncludeIncomplete,
                 IncludeCompleted = candidate.IncludeCompleted,
-                MarkerTag = candidate.MarkerTag,
-                NeverTouchTag = candidate.NeverTouchTag,
+                MarkerTag = markerTag,
+                ExclusionTags = exclusions.ToArray(),
                 ReleaseGraceSeconds = candidate.ReleaseGraceSeconds,
             };
             return true;
@@ -302,7 +305,7 @@ public sealed class ConfigurationService : IDisposable
             configuration.IncludeIncomplete,
             configuration.IncludeCompleted,
             configuration.MarkerTag,
-            configuration.NeverTouchTag,
+            Array.AsReadOnly((configuration.ExclusionTags ?? []).ToArray()),
             configuration.ReleaseGraceSeconds);
     }
 }

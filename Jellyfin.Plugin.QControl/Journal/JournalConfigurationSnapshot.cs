@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.QControl.Journal;
 /// <param name="IncludeIncomplete">Whether incomplete torrents qualify.</param>
 /// <param name="IncludeCompleted">Whether completed torrents qualify.</param>
 /// <param name="MarkerTag">The authoritative marker tag.</param>
-/// <param name="NeverTouchTag">The dominant exclusion tag.</param>
+/// <param name="ExclusionTags">The dominant exclusion tags.</param>
 /// <param name="ReleaseGrace">The full-absence release grace.</param>
 public sealed record JournalConfigurationSnapshot(
     long Revision,
@@ -26,5 +26,5 @@ public sealed record JournalConfigurationSnapshot(
     bool IncludeIncomplete,
     bool IncludeCompleted,
     string MarkerTag,
-    string NeverTouchTag,
+    ImmutableArray<string> ExclusionTags,
     TimeSpan ReleaseGrace);

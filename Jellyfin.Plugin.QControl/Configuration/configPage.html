@@ -178,17 +178,30 @@
                             </div>
                         </fieldset>
 
-                        <div class="qControlTagGrid">
-                            <div class="inputContainer">
-                                <label class="inputLabel inputLabelUnfocused" for="qControlMarkerTag">Marker Tag</label>
-                                <input is="emby-input" id="qControlMarkerTag" type="text" autocomplete="off" />
-                                <div class="fieldDescription">Marks restart intent before a torrent is stopped.</div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="qControlMarkerTag">Marker Tag</label>
+                            <input is="emby-input" id="qControlMarkerTag" type="text" autocomplete="off" />
+                            <div class="fieldDescription">Marks restart intent before a torrent is stopped.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="qControlExclusionTagInput">Exclusion Tags</label>
+                            <div class="qControlTagEntry">
+                                <input is="emby-input" id="qControlExclusionTagInput" type="text"
+                                       list="qControlExclusionTagSuggestions" maxlength="128" autocomplete="off" />
+                                <button is="emby-button" type="button" class="raised button"
+                                        data-action="add-exclusion-tag">
+                                    <span>Add</span>
+                                </button>
                             </div>
-                            <div class="inputContainer">
-                                <label class="inputLabel inputLabelUnfocused" for="qControlNeverTouchTag">Never-touch Tag</label>
-                                <input is="emby-input" id="qControlNeverTouchTag" type="text" autocomplete="off" />
-                                <div class="fieldDescription">Dominates every QControl torrent mutation.</div>
+                            <datalist id="qControlExclusionTagSuggestions"></datalist>
+                            <div id="qControlExclusionTagList" class="qControlTagList" role="list"
+                                 aria-label="Configured Exclusion Tags"></div>
+                            <div class="fieldDescription">
+                                Any matching tag prevents QControl torrent mutations. Add and remove changes are staged
+                                until Save configuration. Suggestions come from qBittorrent's global tag catalog;
+                                custom values are also accepted.
                             </div>
+                            <div id="qControlTagCatalogStatus" class="qControlInlineStatus" aria-live="polite"></div>
                         </div>
                     </fieldset>
 
@@ -296,7 +309,11 @@
         .qControlFieldset { border: 0; margin: 1rem 0; min-width: 0; padding: 0; }
         .qControlFieldset > legend { font-size: 1.08rem; font-weight: 600; margin-bottom: .75rem; }
         .qControlNestedFieldset { border-left: .2rem solid rgba(255, 255, 255, .16); padding-left: 1rem; }
-        .qControlTagGrid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .qControlTagEntry { align-items: end; display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr) auto; }
+        .qControlTagEntry .emby-button { margin: 0 0 .2rem; }
+        .qControlTagList { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0; min-height: 2rem; }
+        .qControlTagItem { align-items: center; background: rgba(255, 255, 255, .09); border-radius: 1rem; display: flex; gap: .4rem; padding: .2rem .3rem .2rem .7rem; }
+        .qControlTagItem .emby-button { margin: 0; min-width: auto; padding: .25rem .55rem; }
         .qControlCategoryChoice { margin-bottom: .55rem; overflow-wrap: anywhere; }
         .qControlMissing { color: #ffd27f; font-size: .92rem; }
         .qControlRecoveryGrid { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -324,7 +341,7 @@
             width: 1px;
         }
         @media (max-width: 52rem) {
-            .qControlGrid, .qControlRecoveryGrid, .qControlTagGrid { grid-template-columns: minmax(0, 1fr); }
+            .qControlGrid, .qControlRecoveryGrid { grid-template-columns: minmax(0, 1fr); }
             .qControlCard { padding: 1rem; }
         }
     </style>

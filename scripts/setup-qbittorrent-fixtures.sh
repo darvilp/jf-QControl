@@ -95,8 +95,8 @@ for category in radarr sonarr; do
             --data-urlencode 'savePath=/downloads'
     fi
 done
-api_post torrents/deleteTags --data-urlencode 'tags=fixture|jfNeverTouch'
-api_post torrents/createTags --data-urlencode 'tags=fixture,jfNeverTouch'
+api_post torrents/deleteTags --data-urlencode 'tags=fixture|qcontrol-ignore'
+api_post torrents/createTags --data-urlencode 'tags=fixture,qcontrol-ignore'
 
 mkdir -p "${download_root}"
 cp --reflink=auto \
@@ -108,7 +108,7 @@ cp --reflink=auto \
 
 add_torrent complete-seeding.bin radarr fixture
 add_torrent complete-stopped.bin radarr fixture
-add_torrent incomplete-stopped.bin sonarr 'fixture,jfNeverTouch'
+add_torrent incomplete-stopped.bin sonarr 'fixture,qcontrol-ignore'
 add_torrent incomplete-stalled.bin sonarr fixture
 add_torrent incomplete-downloading.bin sonarr fixture
 add_torrent incomplete-queued.bin sonarr fixture

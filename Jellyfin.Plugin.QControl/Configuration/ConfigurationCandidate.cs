@@ -51,10 +51,14 @@ public sealed class ConfigurationCandidate
     public bool IncludeCompleted { get; set; } = true;
 
     /// <summary>Gets or sets the restart marker tag.</summary>
-    public string MarkerTag { get; set; } = "jfStopped";
+    public string MarkerTag { get; set; } = "qcontrol-resume";
 
-    /// <summary>Gets or sets the dominant exclusion tag.</summary>
-    public string NeverTouchTag { get; set; } = "jfNeverTouch";
+    /// <summary>Gets or sets the exact dominant exclusion tags.</summary>
+    [SuppressMessage(
+        "Performance",
+        "CA1819:Properties should not return arrays",
+        Justification = "ASP.NET request binding requires a simple settable DTO.")]
+    public string[] ExclusionTags { get; set; } = ["qcontrol-ignore"];
 
     /// <summary>Gets or sets release grace in seconds.</summary>
     public int ReleaseGraceSeconds { get; set; } = 60;

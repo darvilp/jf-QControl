@@ -24,7 +24,7 @@ public sealed class ConfigurationServiceTests
         using var service = CreateService(persistence, probe);
         var candidate = CandidateFrom(persistence.Current);
         candidate.MarkerTag = "same";
-        candidate.NeverTouchTag = "same";
+        candidate.ExclusionTags = ["same"];
 
         var result = await service.SaveAsync(candidate, CancellationToken.None);
 
@@ -140,6 +140,20 @@ public sealed class ConfigurationServiceTests
     }
 
     [Fact]
+    public async Task AcceptedExclusionTagsAreNormalizedAndStoredDeterministically()
+    {
+        var persistence = new RecordingPersistence(ValidCurrent());
+        using var service = CreateService(persistence, new RecordingConnectionProbe());
+        var candidate = CandidateFrom(persistence.Current);
+        candidate.ExclusionTags = [" manual ", "cross-seed", "manual", "Manual"];
+
+        var result = await service.SaveAsync(candidate, CancellationToken.None);
+
+        Assert.Equal(ConfigurationSaveOutcome.Accepted, result.Outcome);
+        Assert.Equal(["Manual", "cross-seed", "manual"], persistence.Current.ExclusionTags);
+    }
+
+    [Fact]
     public async Task ActiveConnectionTopologyCannotChangeButCredentialCan()
     {
         var persistence = new RecordingPersistence(ValidCurrent());
@@ -173,13 +187,16 @@ public sealed class ConfigurationServiceTests
     [Fact]
     public void ConfigurationViewContainsOnlyCredentialPresence()
     {
-        var persistence = new RecordingPersistence(ValidCurrent());
+        var current = ValidCurrent();
+        current.ExclusionTags = ["cross-seed", "manual"];
+        var persistence = new RecordingPersistence(current);
         using var service = CreateService(persistence, new RecordingConnectionProbe());
 
         var view = service.Get();
         var serializedShape = view.ToString();
 
         Assert.True(view.HasStoredApiKey);
+        Assert.Equal(["cross-seed", "manual"], view.ExclusionTags);
         Assert.DoesNotContain(FirstKey, serializedShape, StringComparison.Ordinal);
     }
 
@@ -238,7 +255,7 @@ public sealed class ConfigurationServiceTests
             IncludeIncomplete = true,
             IncludeCompleted = true,
             MarkerTag = "jfStopped",
-            NeverTouchTag = "jfNeverTouch",
+            ExclusionTags = ["jfNeverTouch"],
             ReleaseGraceSeconds = 60,
         };
     }
@@ -258,7 +275,7 @@ public sealed class ConfigurationServiceTests
             IncludeIncomplete = configuration.IncludeIncomplete,
             IncludeCompleted = configuration.IncludeCompleted,
             MarkerTag = configuration.MarkerTag,
-            NeverTouchTag = configuration.NeverTouchTag,
+            ExclusionTags = configuration.ExclusionTags,
             ReleaseGraceSeconds = configuration.ReleaseGraceSeconds,
         };
     }
@@ -280,7 +297,7 @@ public sealed class ConfigurationServiceTests
                 configuration.IncludeIncomplete,
                 configuration.IncludeCompleted,
                 configuration.MarkerTag,
-                configuration.NeverTouchTag,
+                System.Collections.Immutable.ImmutableArray.CreateRange(configuration.ExclusionTags),
                 TimeSpan.FromSeconds(configuration.ReleaseGraceSeconds)),
             Endpoint: new QbittorrentEndpointIdentity("http", "qbittorrent", 8080, "/"),
             AlternativeLimits: new AlternativeLimitsJournalState(

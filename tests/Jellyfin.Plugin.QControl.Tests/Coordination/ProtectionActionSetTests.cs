@@ -135,7 +135,7 @@ public sealed class ProtectionActionSetTests
                 IncludeIncomplete: true,
                 IncludeCompleted: true,
                 MarkerTag: "jfStopped",
-                NeverTouchTag: "jfNeverTouch",
+                ExclusionTags: ["jfNeverTouch"],
                 ReleaseGrace: TimeSpan.FromSeconds(60)),
             Endpoint: new QbittorrentEndpointIdentity("http", "qbittorrent", 8080, "/"),
             AlternativeLimits: new AlternativeLimitsJournalState(

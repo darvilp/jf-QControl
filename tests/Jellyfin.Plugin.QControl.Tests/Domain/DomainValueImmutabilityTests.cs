@@ -29,7 +29,7 @@ public sealed class DomainValueImmutabilityTests
             includeIncomplete: true,
             includeCompleted: true,
             markerTag: "jfStopped",
-            neverTouchTag: "jfNeverTouch");
+            exclusionTags: ["jfNeverTouch"]);
         var selected = TorrentSelector.SelectForAcquisition(
             [new TorrentSnapshot("original", null, 1, false, [])],
             policy);

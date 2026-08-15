@@ -44,7 +44,7 @@ jq --exit-status '
     and (.webApiVersion | startswith("2."))
     and .alternativeSpeedLimits == false
     and (.categories | sort == ["radarr", "sonarr"])
-    and (.tags | sort == ["fixture", "jfNeverTouch"])
+    and (.tags | sort == ["fixture", "qcontrol-ignore"])
     and (.torrents | length == 6)
     and ([.torrents[] | select(.name == "complete-seeding.bin" and .progress == 1 and (.state | startswith("stopped") | not))] | length == 1)
     and ([.torrents[] | select(.name == "complete-stopped.bin" and .progress == 1 and (.state | startswith("stopped")))] | length == 1)

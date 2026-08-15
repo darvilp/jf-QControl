@@ -17,7 +17,7 @@ namespace Jellyfin.Plugin.QControl.ActionContractProbe;
 internal static class Program
 {
     private const string MarkerTag = "qcontrolActionContract";
-    private const string NeverTouchTag = "jfNeverTouch";
+    private const string ExclusionTag = "qcontrol-ignore";
 
     public static async Task<int> Main(string[] arguments)
     {
@@ -54,7 +54,7 @@ internal static class Program
                 StringComparer.Ordinal);
             initiallyRunningHashes = initial
                 .Where(torrent => !torrent.IsStopped)
-                .Where(torrent => !torrent.Tags.Contains(NeverTouchTag))
+                .Where(torrent => !torrent.Tags.Contains(ExclusionTag))
                 .Select(torrent => torrent.Hash)
                 .Order(StringComparer.Ordinal)
                 .ToArray();
@@ -107,9 +107,9 @@ internal static class Program
                 "An unmarked stopped fixture was incorrectly started.");
             Require(
                 restoredState
-                    .Where(torrent => torrent.Tags.Contains(NeverTouchTag))
+                    .Where(torrent => torrent.Tags.Contains(ExclusionTag))
                     .All(torrent => torrent.IsStopped && !torrent.Tags.Contains(MarkerTag)),
-                "The Never-touch fixture was mutated.");
+                "The excluded fixture was mutated.");
             Require(
                 restoredState.All(torrent => string.Equals(
                     torrent.Category,
@@ -163,7 +163,7 @@ internal static class Program
                 IncludeIncomplete: true,
                 IncludeCompleted: true,
                 MarkerTag,
-                NeverTouchTag,
+                [ExclusionTag],
                 ReleaseGrace: TimeSpan.Zero),
             Endpoint: new QbittorrentEndpointIdentity(
                 endpoint.Scheme,

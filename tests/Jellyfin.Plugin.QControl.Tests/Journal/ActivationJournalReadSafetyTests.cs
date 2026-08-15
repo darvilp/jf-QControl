@@ -129,7 +129,7 @@ public sealed class ActivationJournalReadSafetyTests
                 "markerAddStage",
                 "markerRemoveStage",
                 "markerTag",
-                "neverTouchTag",
+                "exclusionTags",
                 "phase",
                 "port",
                 "processInstanceId",

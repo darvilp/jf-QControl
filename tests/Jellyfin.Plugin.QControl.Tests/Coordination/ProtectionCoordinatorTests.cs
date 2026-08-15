@@ -331,7 +331,7 @@ public sealed class ProtectionCoordinatorTests
                     IncludeIncomplete: true,
                     IncludeCompleted: true,
                     MarkerTag: "jfStopped",
-                    NeverTouchTag: "jfNeverTouch",
+                    ExclusionTags: ["jfNeverTouch"],
                     ReleaseGrace: releaseGrace),
                 Endpoint: new QbittorrentEndpointIdentity("http", "qbittorrent", 8080, "/"),
                 AlternativeLimits: new AlternativeLimitsJournalState(

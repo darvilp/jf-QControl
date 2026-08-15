@@ -76,7 +76,10 @@ public sealed class OperationalStatusService
         var stopTorrentsActionEnabled = actionConfiguration?.StopTorrentsEnabled
             ?? configuration.StopTorrentsEnabled;
         var markerTag = actionConfiguration?.MarkerTag ?? configuration.MarkerTag;
-        var neverTouchTag = actionConfiguration?.NeverTouchTag ?? configuration.NeverTouchTag;
+        IEnumerable<string> configuredExclusionTags = actionConfiguration is null
+                ? configuration.ExclusionTags
+                : actionConfiguration.ExclusionTags;
+        var exclusionTags = configuredExclusionTags.ToHashSet(StringComparer.Ordinal);
 
         var connectivity = QbittorrentConnectivity.Unconfigured;
         string? applicationVersion = null;
@@ -109,10 +112,10 @@ public sealed class OperationalStatusService
                 markedCount = torrents.Count(torrent => torrent.Tags.Contains(markerTag));
                 resumableMarkedCount = torrents.Count(torrent =>
                     torrent.Tags.Contains(markerTag)
-                    && !torrent.Tags.Contains(neverTouchTag));
+                    && !torrent.Tags.Any(exclusionTags.Contains));
                 stoppedMarkedCount = torrents.Count(torrent =>
                     torrent.IsStopped && torrent.Tags.Contains(markerTag));
-                excludedCount = torrents.Count(torrent => torrent.Tags.Contains(neverTouchTag));
+                excludedCount = torrents.Count(torrent => torrent.Tags.Any(exclusionTags.Contains));
                 eligibleCount = stopTorrentsActionEnabled
                     ? TorrentSelector.SelectForAcquisition(
                         torrents,
@@ -176,7 +179,7 @@ public sealed class OperationalStatusService
             active?.IncludeIncomplete ?? configuration.IncludeIncomplete,
             active?.IncludeCompleted ?? configuration.IncludeCompleted,
             active?.MarkerTag ?? configuration.MarkerTag,
-            active?.NeverTouchTag ?? configuration.NeverTouchTag);
+            active is null ? configuration.ExclusionTags : active.ExclusionTags);
     }
 
     private static OperationalProtectionState ToOperationalState(

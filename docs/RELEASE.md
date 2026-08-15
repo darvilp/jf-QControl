@@ -129,7 +129,8 @@ writes a catalog branch.
 - Jellyfin `10.11.11` and qBittorrent `5.2.3` are the only proven versions.
 - qBittorrent 4.x, multiple qBittorrent instances, VPN/public-IP validation,
   adaptive throttling, and automatic crash restoration are out of scope.
-- This first release has no prior public version, so upgrade testing begins
-  with the second release.
+- Alpha upgrades may require a clean configuration and no retained recovery
+  journal. Upgrade compatibility becomes mandatory with the first non-alpha
+  release and is tested for every subsequent supported release.
 - Native Windows credential smoke remains a documented operator test until a
   Windows Jellyfin CI/runtime fixture exists.

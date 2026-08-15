@@ -124,7 +124,7 @@ qbit_get app/preferences \
          and .bypass_auth_subnet_whitelist == $subnet' >/dev/null
 
 unauthenticated_candidate="$(jq --null-input \
-    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:2,secretFilePath:"",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:false,stopTorrentsEnabled:false,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"jfStopped",neverTouchTag:"jfNeverTouch",releaseGraceSeconds:1}')"
+    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:2,secretFilePath:"",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:false,stopTorrentsEnabled:false,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"qcontrol-resume",exclusionTags:["qcontrol-ignore"],releaseGraceSeconds:1}')"
 unauthenticated_test="$(curl --fail --silent --show-error \
     --request POST \
     --header "X-Emby-Token: ${admin_token}" \
@@ -156,7 +156,7 @@ regular_token="$(curl --fail --silent --show-error \
 test -n "${regular_user_id}"
 
 candidate="$(jq --null-input \
-    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:1,secretFilePath:"/run/secrets/qbittorrent-api-key",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:true,stopTorrentsEnabled:true,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"jfStopped",neverTouchTag:"jfNeverTouch",releaseGraceSeconds:1}')"
+    '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:1,secretFilePath:"/run/secrets/qbittorrent-api-key",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:true,stopTorrentsEnabled:true,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"qcontrol-resume",exclusionTags:["qcontrol-ignore"],releaseGraceSeconds:1}')"
 
 for request in \
     'GET QControl/Configuration' \
@@ -229,7 +229,7 @@ player_token="$(authenticate_device qcontrol-contract-player)"
 initial_torrents="$(qbit_get torrents/info)"
 initial_limits="$(qbit_get transfer/speedLimitsMode)"
 expected_hashes="$(jq --raw-output \
-    '[.[] | select((.state | startswith("stopped") | not) and (.tags | contains("jfNeverTouch") | not)) | .hash] | sort | .[]' \
+    '[.[] | select((.state | startswith("stopped") | not) and (.tags | contains("qcontrol-ignore") | not)) | .hash] | sort | .[]' \
     <<<"${initial_torrents}")"
 test -n "${expected_hashes}"
 initial_categories="$(jq --sort-keys '[.[] | {key:.hash,value:(.category // "")}] | from_entries' \
@@ -242,7 +242,7 @@ for _ in {1..30}; do
     if jq --exit-status \
         --argjson expected "$(jq --raw-input --slurp 'split("\n")[:-1]' <<<"${expected_hashes}")" \
         'all(.[]; . as $torrent | (($expected | index($torrent.hash)) == null)
-            or (($torrent.state | startswith("stopped")) and ($torrent.tags | contains("jfStopped"))))' \
+            or (($torrent.state | startswith("stopped")) and ($torrent.tags | contains("qcontrol-resume"))))' \
         <<<"${current_torrents}" >/dev/null; then
         protected=1
         break
@@ -278,7 +278,7 @@ for _ in {1..30}; do
         && jq --exit-status \
             --argjson expected "$(jq --raw-input --slurp 'split("\n")[:-1]' <<<"${expected_hashes}")" \
             'all(.[]; . as $torrent | (($expected | index($torrent.hash)) == null)
-                or (($torrent.state | startswith("stopped") | not) and ($torrent.tags | contains("jfStopped") | not)))' \
+                or (($torrent.state | startswith("stopped") | not) and ($torrent.tags | contains("qcontrol-resume") | not)))' \
             <<<"${current_torrents}" >/dev/null; then
         restored=1
         break
@@ -302,12 +302,12 @@ jq --exit-status \
 
 manual_hash="$(jq --exit-status --raw-output \
     '[.[] | select(.state | startswith("stopped"))
-        | select(.tags | contains("jfNeverTouch") | not)][0].hash' \
+        | select(.tags | contains("qcontrol-ignore") | not)][0].hash' \
     <<<"${current_torrents}")"
 manual_category="$(jq --exit-status --raw-output --arg hash "${manual_hash}" \
     '.[] | select(.hash == $hash) | (.category // "")' \
     <<<"${current_torrents}")"
-qbit_post torrents/addTags "hashes=${manual_hash}" 'tags=jfStopped'
+qbit_post torrents/addTags "hashes=${manual_hash}" 'tags=qcontrol-resume'
 
 marker_status="$(curl --fail --silent --show-error \
     --header "X-Emby-Token: ${admin_token}" \
@@ -333,7 +333,7 @@ for _ in {1..30}; do
     if [[ ! -e "${journal_path}" ]] \
         && jq --exit-status \
             '(.state | startswith("stopped") | not)
-             and (.tags | contains("jfStopped") | not)' \
+             and (.tags | contains("qcontrol-resume") | not)' \
             <<<"${manual_torrent}" >/dev/null; then
         manual_restored=1
         break

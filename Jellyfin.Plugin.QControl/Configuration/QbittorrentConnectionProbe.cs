@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.QControl.QBittorrent;
@@ -33,10 +34,24 @@ public sealed class QbittorrentConnectionProbe : IQbittorrentConnectionProbe
             var client = _clientFactory.Create(candidate);
             var server = await client.GetServerInfoAsync(cancellationToken).ConfigureAwait(false);
             var categories = await client.GetCategoriesAsync(cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<string> tags;
+            var isTagCatalogAvailable = true;
+            try
+            {
+                tags = await client.GetTagsAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (QbittorrentClientException)
+            {
+                tags = [];
+                isTagCatalogAvailable = false;
+            }
+
             return QbittorrentConnectionProbeResult.Connected(
                 server.ApplicationVersion,
                 server.WebApiVersion,
-                categories);
+                categories,
+                tags,
+                isTagCatalogAvailable);
         }
         catch (QbittorrentClientException exception)
         {

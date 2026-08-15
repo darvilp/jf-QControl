@@ -178,7 +178,7 @@ Issue 005 ran the serialized production Stop Torrents service with that client
 and the physical atomic journal. It selected all initially running non-excluded
 fixture hashes, durably recorded marker intent, added the marker, stopped only
 read-back-confirmed marked hashes, and restored those hashes before removing
-the marker. The completed-stopped, incomplete-stopped, and Never-touch
+the marker. The completed-stopped, incomplete-stopped, and excluded
 preconditions were checked after both protection and restoration; none were
 cycled merely to defeat qBittorrent queueing.
 
@@ -207,7 +207,7 @@ precondition was established through bounded Web API polling.
 
 The torrent list exposed all selector inputs needed later: hash, category,
 tags, progress/completion, and stopped/running state. Categories `radarr` and
-`sonarr` and tags `fixture` and `jfNeverTouch` round-tripped exactly.
+`sonarr` and tags `fixture` and `qcontrol-ignore` round-tripped exactly.
 
 ## Mutation contracts
 

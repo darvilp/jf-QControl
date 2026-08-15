@@ -19,7 +19,7 @@ namespace Jellyfin.Plugin.QControl.Tests.Recovery;
 public sealed class RecoveryServiceTests
 {
     [Fact]
-    public async Task ResumeMarkedWithoutJournalPersistsIntentAndHonorsNeverTouch()
+    public async Task ResumeMarkedWithoutJournalPersistsIntentAndHonorsAnyExclusionTag()
     {
         var events = new List<string>();
         var store = new RecordingStore(events);
@@ -28,7 +28,7 @@ public sealed class RecoveryServiceTests
             Torrents =
             [
                 Torrent("a", true, "jfStopped"),
-                Torrent("b", true, "jfStopped", "jfNeverTouch"),
+                Torrent("b", true, "jfStopped", "manual"),
             ],
         };
         using var gate = new ProtectionExecutionGate();
@@ -223,7 +223,7 @@ public sealed class RecoveryServiceTests
             IncludeIncomplete = true,
             IncludeCompleted = true,
             MarkerTag = "jfStopped",
-            NeverTouchTag = "jfNeverTouch",
+            ExclusionTags = ["jfNeverTouch", "manual"],
             ReleaseGraceSeconds = 60,
         };
     }
@@ -245,7 +245,7 @@ public sealed class RecoveryServiceTests
                 true,
                 true,
                 "jfStopped",
-                "jfNeverTouch",
+                ["jfNeverTouch"],
                 TimeSpan.FromSeconds(60)),
             new QbittorrentEndpointIdentity("http", "qbit", 8080, "/"),
             new AlternativeLimitsJournalState(
@@ -460,6 +460,9 @@ public sealed class RecoveryServiceTests
             throw new NotSupportedException();
 
         public Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
         public Task AddTagAsync(

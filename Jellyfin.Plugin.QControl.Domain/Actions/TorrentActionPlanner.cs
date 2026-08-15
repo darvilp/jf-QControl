@@ -52,7 +52,7 @@ public static class TorrentActionPlanner
 
         var owned = torrents
             .Where(torrent => torrent.Tags.Contains(policy.MarkerTag))
-            .Where(torrent => !torrent.Tags.Contains(policy.NeverTouchTag))
+            .Where(torrent => !policy.IsExcluded(torrent))
             .ToArray();
         var startHashes = owned
             .Where(torrent => torrent.IsStopped)

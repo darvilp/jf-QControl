@@ -37,6 +37,10 @@ internal static class Program
         Require(categories.Contains("radarr", StringComparer.Ordinal), "Missing radarr category.");
         Require(categories.Contains("sonarr", StringComparer.Ordinal), "Missing sonarr category.");
 
+        var tags = await client.GetTagsAsync(timeout.Token).ConfigureAwait(false);
+        Require(tags.Contains("fixture", StringComparer.Ordinal), "Missing fixture tag from global catalog.");
+        Require(tags.Contains("qcontrol-ignore", StringComparer.Ordinal), "Missing exclusion tag from global catalog.");
+
         var torrents = await client.GetTorrentsAsync(timeout.Token).ConfigureAwait(false);
         Require(torrents.Count == 6, "Unexpected fixture torrent count.");
         var target = torrents.FirstOrDefault(torrent => torrent.IsCompleted && torrent.IsStopped)

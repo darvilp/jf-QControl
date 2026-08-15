@@ -177,14 +177,24 @@ At least one lifecycle must be selected when Stop Torrents is enabled.
 Completion is classified from remaining content, not transient states such as
 queued, stalled, downloading, or uploading.
 
-Two configurable tags participate:
+Two configurable tag settings participate:
 
-- Marker Tag, default `jfStopped`;
-- Never-touch Tag, default `jfNeverTouch`.
+- Marker Tag, default `qcontrol-resume`;
+- Exclusion Tag List, initially containing `qcontrol-ignore`.
 
-Tag names must be non-empty and distinct when Stop Torrents is enabled. Existing
-Marker Tag assignments are intentional administrator state. QControl performs
-no collision warning, adoption prompt, or provenance inference.
+The Marker Tag must be non-empty and cannot also appear in the Exclusion Tag
+List when Stop Torrents is enabled. Exclusion tags are exact and case-sensitive;
+a torrent carrying any configured Exclusion Tag is excluded. The list may be
+empty; removing its final member is accepted as explicit administrator intent.
+Existing Marker Tag assignments are intentional administrator state. QControl
+performs no collision warning, adoption prompt, or provenance inference.
+
+On save, QControl trims surrounding whitespace, rejects blank or comma-bearing
+tag names, removes exact duplicates, and stores tags in ordinal order. Case and
+internal spaces are preserved. Commas, line breaks, and control characters are
+invalid because qBittorrent's Web API uses commas to delimit multiple tags and
+the tag-list editor treats each entry as one visible value. The list accepts at
+most 64 entries of at most 128 characters each.
 
 ### 6.3 Acquisition
 
@@ -193,7 +203,7 @@ torrent is eligible when:
 
 1. It falls inside the configured stop scope.
 2. Its completion lifecycle is selected.
-3. It does not carry the Never-touch Tag.
+3. It does not carry any configured Exclusion Tag.
 4. It is not already stopped.
 
 For each explicit batch of eligible hashes:
@@ -217,9 +227,16 @@ An eligible torrent that starts again during the activation is stopped again.
 QControl intentionally does not determine whether that start came from an
 administrator, qBittorrent queueing, an automation, or a restart.
 
-The Never-touch Tag is the only V1 exclusion. It takes precedence over the
-Marker Tag. QControl performs no start, stop, tag removal, or other torrent
-mutation on a never-touch torrent.
+The Exclusion Tag List is the only torrent exclusion mechanism. Any matching
+Exclusion Tag takes precedence over the Marker Tag. QControl performs no start,
+stop, tag removal, or other torrent mutation on an excluded torrent.
+
+The list is snapshotted for one protection activation. Saving list changes
+during protection affects the next activation, while adding or removing a
+snapshotted Exclusion Tag on a torrent affects the next reconciliation. If an
+already stopped and marked torrent becomes excluded, QControl leaves its state
+and tags untouched. Removing the actual Exclusion Tag later makes it eligible
+for the existing restoration or manual-recovery path.
 
 ### 6.5 Why “all” still uses explicit hashes
 
@@ -233,7 +250,7 @@ would otherwise be stopped without a marker.
 ### 6.6 Normal restoration
 
 After release grace expires, QControl queries torrents carrying the activation's
-Marker Tag. For explicit hashes that do not carry the Never-touch Tag, it:
+Marker Tag. For explicit hashes that carry no configured Exclusion Tag, it:
 
 1. Records restart intent.
 2. Starts the hashes.
@@ -261,7 +278,7 @@ operations. It contains:
 - configuration snapshot and revision;
 - qBittorrent endpoint identity without credentials;
 - previous Alternative Limits state and whether QControl changed it;
-- Marker and Never-touch Tag names used by the activation;
+- Marker Tag and Exclusion Tag List used by the activation;
 - affected hashes and per-hash operation progress;
 - release state and last successful reconciliation;
 - failure details safe for administrator display.
@@ -333,7 +350,7 @@ V1 configuration contains:
 | Lifecycle | include incomplete torrents |
 | Lifecycle | include completed torrents |
 | Tags | Marker Tag |
-| Tags | Never-touch Tag |
+| Tags | Exclusion Tag List |
 | Timing | release grace in seconds |
 | Metadata | schema version and accepted revision |
 
@@ -345,8 +362,8 @@ Stop Torrents: disabled
 Scope: all torrents
 Include incomplete: enabled
 Include completed: enabled
-Marker Tag: jfStopped
-Never-touch Tag: jfNeverTouch
+Marker Tag: qcontrol-resume
+Exclusion Tags: qcontrol-ignore
 Release grace: 60 seconds
 ```
 
@@ -413,6 +430,18 @@ The status page reports:
 Configuration discovers available qBittorrent categories after a successful
 connection test. Administrators may still retain configured categories that are
 temporarily absent.
+
+The Exclusion Tag List suggests qBittorrent's complete registered tag catalog
+but is creatable: an administrator can enter an exact tag that does not yet
+exist. QControl stores matching policy but never creates or assigns an Exclusion
+Tag while saving configuration. Saved values remain editable while qBittorrent
+is offline or no current torrent carries them.
+
+The list editor stages additions and removals until **Save configuration**. It
+supports keyboard entry, an explicit Add action, and accessible removal controls.
+The single Marker Tag remains a plain text field. Failure to fetch tag suggestions
+does not fail an otherwise valid connection test; the page reports that
+suggestions are unavailable and retains saved and newly entered values.
 
 All QControl API endpoints require Jellyfin administrator authorization.
 
@@ -535,8 +564,8 @@ The tree is guidance, not a fixed class-level design.
 7. **Explicit hashes:** no blind `stop all` or `start all` call is permitted.
 8. **Tag authority:** the configurable Marker Tag expresses restart intent,
    including assignments predating the current installation.
-9. **Exclusion wins:** QControl never mutates a torrent carrying the configured
-   Never-touch Tag.
+9. **Exclusion wins:** QControl never mutates a torrent carrying any configured
+   Exclusion Tag.
 10. **No admin inference:** eligible torrents that restart during protection are
     stopped again.
 11. **Category preservation:** QControl never changes torrent categories.
@@ -582,3 +611,6 @@ The tree is guidance, not a fixed class-level design.
 - The plugin loads on its declared Jellyfin 10.11 target.
 - A release ZIP, manifest, checksum, clean-install test, and upgrade contract are
   documented and reproducible.
+- Alpha configuration and journal schemas may start from a clean slate. The
+  first non-alpha release establishes the forward-migration compatibility
+  boundary for subsequent releases.

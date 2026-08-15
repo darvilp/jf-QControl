@@ -221,6 +221,7 @@ public sealed class ActivationJournalStore : IActivationJournalStore
             || document.SessionIds.Distinct(StringComparer.Ordinal).Count() != document.SessionIds.Length
             || document.Configuration is null
             || document.Configuration.SelectedCategories.IsDefault
+            || document.Configuration.ExclusionTags.IsDefault
             || document.Endpoint is null
             || document.AlternativeLimits is null
             || document.Torrents.IsDefault
@@ -242,10 +243,11 @@ public sealed class ActivationJournalStore : IActivationJournalStore
         }
 
         if (!IsOrdinallySortedUnique(document.SessionIds)
-            || !IsOrdinallySortedUnique(document.Configuration.SelectedCategories))
+            || !IsOrdinallySortedUnique(document.Configuration.SelectedCategories)
+            || !IsOrdinallySortedUnique(document.Configuration.ExclusionTags))
         {
             throw new ArgumentException(
-                "Journal identifier and category collections must be deterministic.",
+                "Journal identifier, category, and exclusion collections must be deterministic.",
                 nameof(document));
         }
 
@@ -257,7 +259,7 @@ public sealed class ActivationJournalStore : IActivationJournalStore
                 document.Configuration.IncludeIncomplete,
                 document.Configuration.IncludeCompleted,
                 document.Configuration.MarkerTag,
-                document.Configuration.NeverTouchTag);
+                document.Configuration.ExclusionTags);
         }
         else if (document.Torrents.Length > 0)
         {

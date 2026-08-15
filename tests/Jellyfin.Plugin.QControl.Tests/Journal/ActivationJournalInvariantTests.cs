@@ -88,6 +88,40 @@ public sealed class ActivationJournalInvariantTests
     }
 
     [Fact]
+    public async Task ExclusionTagSnapshotMustBeOrdinallySortedAndUnique()
+    {
+        var original = JournalTestData.Create(ProcessInstanceId);
+        var journal = original with
+        {
+            Configuration = original.Configuration with
+            {
+                ExclusionTags = ["manual", "cross-seed"],
+            },
+        };
+        var store = new ActivationJournalStore(JournalPath, new RawFileSystem());
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => store.WriteAsync(journal, CancellationToken.None).AsTask()).ConfigureAwait(true);
+    }
+
+    [Fact]
+    public async Task ExclusionTagSnapshotCannotBeMissing()
+    {
+        var original = JournalTestData.Create(ProcessInstanceId);
+        var journal = original with
+        {
+            Configuration = original.Configuration with
+            {
+                ExclusionTags = default,
+            },
+        };
+        var store = new ActivationJournalStore(JournalPath, new RawFileSystem());
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => store.WriteAsync(journal, CancellationToken.None).AsTask()).ConfigureAwait(true);
+    }
+
+    [Fact]
     public async Task ConfirmedInitialEnableCannotRemainUnowned()
     {
         var journal = JournalTestData.Create(ProcessInstanceId) with

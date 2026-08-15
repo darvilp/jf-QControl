@@ -31,7 +31,7 @@ Cover:
 - activation and release-grace transitions;
 - overlapping session aggregation;
 - torrent scope and lifecycle selection;
-- Marker and Never-touch Tag semantics;
+- Marker Tag and Exclusion Tag List semantics;
 - explicit-hash mutation planning;
 - Alternative Limits ownership planning;
 - configuration-snapshot behavior;
@@ -185,7 +185,7 @@ mutation.
 
 ### Exclusion dominance
 
-Adding the Never-touch Tag removes a torrent from every planned torrent
+Adding any configured Exclusion Tag removes a torrent from every planned torrent
 mutation, even when it also carries the Marker Tag.
 
 ### Unmarked-stop preservation
@@ -246,7 +246,14 @@ contains the API key or secret-file contents.
 | Configuration | Invalid connection cannot enable mutation |
 | Configuration | Active configuration snapshot remains stable after save |
 | Configuration | Replacement credential reconnects immediately |
-| Configuration | Marker and never-touch names must be distinct and non-empty |
+| Configuration | Marker Tag is non-empty and absent from the Exclusion Tag List |
+| Configuration | An empty Exclusion Tag List is accepted |
+| Configuration | Exclusion tags trim boundaries, reject blanks and commas, and deduplicate exactly |
+| Configuration | Exclusion tag case and internal spaces remain significant |
+| Configuration | Global qBittorrent tags are suggestions and new configured values remain creatable |
+| Configuration | Exclusion list accepts at most 64 tags of 128 characters each |
+| Configuration | Commas, line breaks, and control characters are rejected |
+| Configuration | Tag catalog failure preserves custom values and does not fail connection validation |
 | Scope | All includes categorized torrents |
 | Scope | All includes uncategorized torrents |
 | Scope | Selected categories use exact names |
@@ -255,8 +262,8 @@ contains the API key or secret-file contents.
 | Lifecycle | Completed-only includes zero-remaining torrents |
 | Lifecycle | Both includes both populations |
 | Lifecycle | Transient queue/stall state does not change completion class |
-| Exclusion | Never-touch excludes an otherwise eligible torrent |
-| Exclusion | Never-touch wins when both tags are present |
+| Exclusion | Any configured Exclusion Tag excludes an otherwise eligible torrent |
+| Exclusion | An Exclusion Tag wins when the Marker Tag is also present |
 | Acquisition | Already-stopped unmarked torrent remains unmarked |
 | Acquisition | Marker is persisted before stop request |
 | Acquisition | Initial pass includes queued and stalled eligible torrents |
@@ -268,7 +275,8 @@ contains the API key or secret-file contents.
 | Restoration | Marker is removed only after read-back confirms not stopped |
 | Restoration | Unmarked stopped torrent remains stopped |
 | Restoration | Pre-existing Marker Tag is accepted as restart intent |
-| Restoration | Never-touch marked torrent receives no start or tag mutation |
+| Restoration | A marked torrent carrying any snapshotted Exclusion Tag remains untouched |
+| Restoration | Excluded marked torrent receives no start or tag mutation |
 | Restoration | Queued-after-start counts as accepted restoration |
 | Restoration | No start request uses `all` |
 | Alternative Limits | Initially disabled is enabled and owned |
