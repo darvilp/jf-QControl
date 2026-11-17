@@ -1,12 +1,11 @@
 # Release preparation
 
-QControl uses four-component plugin versions such as `0.1.0.1` and matching
-tags such as `v0.1.0.1`.
+QControl uses four-component plugin versions such as `0.2.0.0` and matching
+tags such as `v0.2.0.0`.
 
-This document describes the published 10.11 alpha. The Jellyfin 12 migration
-has not been released. See [its validation checklist](compatibility/jellyfin-12.md).
-Before a future release, assign a new plugin version and release notes, and add
-a new catalog entry while retaining all 10.11 entries and ZIP assets.
+Version `0.2.0.0` is the Jellyfin 12 alpha candidate. See the
+[runtime evidence and remaining checks](compatibility/jellyfin-12.md).
+Retain all historical 10.11 catalog entries and ZIP assets when publishing it.
 
 ## Install from the Jellyfin catalog
 
@@ -20,7 +19,7 @@ https://raw.githubusercontent.com/darvilp/jf-QControl/manifest/manifest.json
 2. Add a repository named `QControl` with the URL above and save it.
 3. Open **Catalog**, select QControl, install the alpha, and restart Jellyfin.
 4. Confirm **Dashboard > Plugins > My Plugins > QControl** shows version
-   `0.1.0.1` as Active.
+   `0.2.0.0` as Active.
 5. Open **Dashboard > Plugins > QControl**, configure and test the qBittorrent
    connection, enable at least one action, and save.
 
@@ -30,14 +29,14 @@ catalog prevents Jellyfin from seeing an install entry with a dead download.
 
 ## Install an alpha package manually
 
-1. Confirm the Jellyfin server is `10.11.11`. Stop Jellyfin.
+1. Confirm the Jellyfin server is `12.0.0`. Stop Jellyfin.
 2. Create a `QControl` directory under Jellyfin's plugin directory.
 3. Extract `Jellyfin.Plugin.QControl.dll` and
    `Jellyfin.Plugin.QControl.Domain.dll` from the candidate ZIP into that
    directory. `meta.json` describes the package and does not need to be copied
    for a manual install.
 4. Start Jellyfin. Confirm **Dashboard > Plugins > My Plugins > QControl** shows
-   version `0.1.0.1` as Active.
+   version `0.2.0.0` as Active.
 5. Open **Dashboard > Plugins > QControl**, configure the qBittorrent endpoint
    and one authentication mode, test the connection, select at least one action,
    and save.
@@ -90,7 +89,7 @@ On Windows:
 
 The path construction and platform-neutral file APIs have automated coverage,
 but this Linux-hosted project does not claim a native Windows Jellyfin runtime
-smoke for `0.1.0.1`. Record the Jellyfin service account, Windows/Jellyfin
+smoke for `0.2.0.0`. Record the Jellyfin service account, Windows/Jellyfin
 versions, both connection-test outcomes, and restart-retention result when the
 procedure is run. Do not record the API key or include it in screenshots.
 
@@ -100,8 +99,8 @@ The local preparation path is read-only with respect to GitHub:
 
 ```bash
 artifact="$(scripts/package.sh | tail -n 1)"
-scripts/verify-release-contract.sh v0.1.0.1 "${artifact}"
-scripts/prepare-release-assets.sh v0.1.0.1 "${artifact}" artifacts/release
+scripts/verify-release-contract.sh v0.2.0.0 "${artifact}"
+scripts/prepare-release-assets.sh v0.2.0.0 "${artifact}" artifacts/release
 scripts/test-manifest-install.sh "${artifact}"
 scripts/test-issue-010.sh
 ```
@@ -131,7 +130,8 @@ writes a catalog branch.
 
 ## Alpha limitations
 
-- Jellyfin `10.11.11` and qBittorrent `5.2.3` are the only proven versions.
+- This candidate was smoke-tested on Jellyfin `12.0.0` and qBittorrent `5.2.3`.
+  Historical `0.1.0.x` packages remain available for Jellyfin `10.11.11`.
 - qBittorrent 4.x, multiple qBittorrent instances, VPN/public-IP validation,
   adaptive throttling, and automatic crash restoration are out of scope.
 - Alpha upgrades may require a clean configuration and no retained recovery

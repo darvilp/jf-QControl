@@ -2,8 +2,9 @@
 
 This branch targets Jellyfin packages `12.0.0`, plugin ABI `12.0.0.0`, and
 `net10.0`. The SDK minimum is `10.0.100` with `latestMinor` roll-forward.
-The existing plugin version remains `0.1.0.1` for this unpublished migration.
-A maintainer must assign a new version before any release.
+Initial smoke tests used an unpublished `0.1.0.1` build. The distinct release
+candidate is now `0.2.0.0`; its versioned package and release contracts must
+pass before publishing.
 
 The previous source is preserved at
 [`legacy/jellyfin-10.11`](https://github.com/darvilp/jf-QControl/tree/legacy/jellyfin-10.11),
