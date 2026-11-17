@@ -89,4 +89,4 @@ if grep --fixed-strings --quiet 'qbt_' <<<"${safe_configuration}${status}"; then
 fi
 
 completed=1
-printf 'Verified the responsive QControl page and thin controller served by Jellyfin 10.11.11.\n'
+printf 'Verified the responsive QControl page and thin controller served by Jellyfin 12.0.0.\n'

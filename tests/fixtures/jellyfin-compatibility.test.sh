@@ -119,4 +119,4 @@ if [[ "${page}" != *'id="qControlPage"'* \
 fi
 
 completed=1
-printf 'Verified the packaged QControl plugin on Jellyfin 10.11.11.\n'
+printf 'Verified the packaged QControl plugin on Jellyfin 12.0.0.\n'

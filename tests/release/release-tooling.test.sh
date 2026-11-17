@@ -86,6 +86,19 @@ expect_failure \
     'does not match build.yaml version' \
     "${verify_release}" 'v9.9.9.9' "${package_path}"
 
+# Accept Jellyfin's two-component image tag without accepting a different ABI.
+fixture_root="${temp_root}/version-fixture"
+mkdir -p "${fixture_root}/scripts" "${fixture_root}/Jellyfin.Plugin.QControl"
+cp "${project_root}"/{build.yaml,Directory.Build.props,Directory.Packages.props,global.json,compose.yaml} "${fixture_root}/"
+cp "${project_root}/Jellyfin.Plugin.QControl/Jellyfin.Plugin.QControl.csproj" "${fixture_root}/Jellyfin.Plugin.QControl/"
+cp "${project_root}/scripts/"{verify-release-contract,read-build-metadata,verify-package}.sh "${fixture_root}/scripts/"
+sed -i 's|jellyfin/jellyfin:12.0@|jellyfin/jellyfin:12.1@|' "${fixture_root}/compose.yaml"
+expect_failure \
+    'does not match target ABI server version' \
+    "${fixture_root}/scripts/verify-release-contract.sh" "${tag}" "${package_path}"
+sed -i 's|jellyfin/jellyfin:12.1@|jellyfin/jellyfin:12.0.0@|' "${fixture_root}/compose.yaml"
+"${fixture_root}/scripts/verify-release-contract.sh" "${tag}" "${package_path}"
+
 assets_dir="${temp_root}/assets"
 "${prepare_assets}" "${tag}" "${package_path}" "${assets_dir}"
 test -f "${assets_dir}/${asset_name}"

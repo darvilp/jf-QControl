@@ -14,7 +14,7 @@ fi
 
 rendered="$(docker compose --project-directory "${project_root}" --file "${compose_file}" config)"
 
-grep --fixed-strings 'jellyfin/jellyfin:10.11.11@sha256:aefb67e6a7ff1debdd154a78a7bbb780fd0c873d8639210a7f6a2016ad2b35db' <<<"${rendered}" >/dev/null
+grep --fixed-strings 'jellyfin/jellyfin:12.0@sha256:baba630419915985442f315f08b0cf46d9f4c8a0cc4bd38e94a6d35751dd5ef5' <<<"${rendered}" >/dev/null
 grep --fixed-strings 'lscr.io/linuxserver/qbittorrent:5.2.3@sha256:6816d2b144b1eb97665f886e41e18a14d026ba78c9d0953fc68a1211ea819433' <<<"${rendered}" >/dev/null
 grep --fixed-strings 'nginx:1.28.0-alpine@sha256:30f1c0d78e0ad60901648be663a710bdadf19e4c10ac6782c235200619158284' <<<"${rendered}" >/dev/null
 grep --fixed-strings 'host_ip: 127.0.0.1' <<<"${rendered}" >/dev/null

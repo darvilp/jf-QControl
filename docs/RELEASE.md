@@ -3,6 +3,11 @@
 QControl uses four-component plugin versions such as `0.1.0.1` and matching
 tags such as `v0.1.0.1`.
 
+This document describes the published 10.11 alpha. The Jellyfin 12 migration
+has not been released. See [its validation checklist](compatibility/jellyfin-12.md).
+Before a future release, assign a new plugin version and release notes, and add
+a new catalog entry while retaining all 10.11 entries and ZIP assets.
+
 ## Install from the Jellyfin catalog
 
 The permanent QControl repository URL is:

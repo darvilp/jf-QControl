@@ -90,7 +90,7 @@ Cover:
 
 Cover:
 
-- minimal plugin load on the selected Jellyfin 10.11 ABI;
+- minimal plugin load on the selected Jellyfin 12 ABI;
 - start, progress, stop, and session lifecycle event behavior;
 - playing and paused `SessionInfo` shapes;
 - current-session enumeration after events;
