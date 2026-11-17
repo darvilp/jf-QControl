@@ -56,12 +56,12 @@ printf '%s\n' "${access_token}" >"${token_file}"
 chmod 600 "${token_file}"
 
 api_get() {
-    curl --fail --silent --header "X-Emby-Token: ${access_token}" "$1"
+    curl --fail --silent --header "Authorization: MediaBrowser Token=\"${access_token}\"" "$1"
 }
 
 api_post() {
     curl --fail --silent --request POST \
-        --header "X-Emby-Token: ${access_token}" \
+        --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
         --header 'Content-Type: application/json' \
         --data "${2:-{}}" \
         "$1"

@@ -36,7 +36,7 @@ api_status() {
     local body="${4:-}"
     local arguments=(--silent --output /dev/null --write-out '%{http_code}' --request "${method}")
     if [[ -n "${token}" ]]; then
-        arguments+=(--header "X-Emby-Token: ${token}")
+        arguments+=(--header "Authorization: MediaBrowser Token=\"${token}\"")
     fi
     if [[ -n "${body}" ]]; then
         arguments+=(--header 'Content-Type: application/json' --data "${body}")
@@ -61,7 +61,7 @@ report_start() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"CanSeek\":true,\"ItemId\":\"${movie_id}\",\"IsPaused\":true,\"PositionTicks\":0,\"PlayMethod\":\"DirectPlay\",\"PlaySessionId\":\"qcontrol-contract-play\"}" \
         "${server_url}/Sessions/Playing"
@@ -72,7 +72,7 @@ report_stop() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"ItemId\":\"${movie_id}\",\"PositionTicks\":10000000,\"PlaySessionId\":\"qcontrol-contract-play\",\"Failed\":false}" \
         "${server_url}/Sessions/Playing/Stopped"
@@ -127,7 +127,7 @@ unauthenticated_candidate="$(jq --null-input \
     '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:2,secretFilePath:"",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:false,stopTorrentsEnabled:false,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"qcontrol-resume",exclusionTags:["qcontrol-ignore"],releaseGraceSeconds:1}')"
 unauthenticated_test="$(curl --fail --silent --show-error \
     --request POST \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${unauthenticated_candidate}" \
     "${server_url}/QControl/Connection/Test")"
@@ -140,7 +140,7 @@ qbit_post app/setPreferences \
 
 regular_user="$(curl --fail --silent --show-error \
     --request POST \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     --header 'Content-Type: application/json' \
     --data '{"Name":"qcontrol-regular"}' \
     "${server_url}/Users/New")"
@@ -177,7 +177,7 @@ done
 
 connection_test="$(curl --fail --silent --show-error \
     --request POST \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${candidate}" \
     "${server_url}/QControl/Connection/Test")"
@@ -189,7 +189,7 @@ jq --exit-status \
 
 save_result="$(curl --fail --silent --show-error \
     --request PUT \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${candidate}" \
     "${server_url}/QControl/Configuration")"
@@ -203,7 +203,7 @@ if ! jq --exit-status \
 fi
 
 safe_configuration="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/QControl/Configuration")"
 jq --exit-status \
     '(.hasStoredApiKey // .HasStoredApiKey) == false
@@ -215,13 +215,13 @@ if grep --fixed-strings --quiet 'qbt_' <<<"${safe_configuration}"; then
 fi
 
 category_result="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/QControl/Connection/Categories")"
 jq --exit-status '((.categories // .Categories) | sort) == ["radarr", "sonarr"]' \
     <<<"${category_result}" >/dev/null
 
 admin_items="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/Items?Recursive=true&IncludeItemTypes=Movie")"
 movie_id="$(jq --exit-status --raw-output '.Items[0].Id' <<<"${admin_items}")"
 player_token="$(authenticate_device qcontrol-contract-player)"
@@ -253,7 +253,7 @@ test "${protected}" = '1'
 test "$(qbit_get transfer/speedLimitsMode)" = '1'
 
 active_status="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/QControl/Status")"
 jq --exit-status \
     '((.protectionState // .ProtectionState) | ascii_downcase) == "protecting"
@@ -292,7 +292,7 @@ current_categories="$(jq --sort-keys '[.[] | {key:.hash,value:(.category // "")}
 test "${current_categories}" = "${initial_categories}"
 
 inactive_status="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/QControl/Status")"
 jq --exit-status \
     '((.protectionState // .ProtectionState) | ascii_downcase) == "inactive"
@@ -310,7 +310,7 @@ manual_category="$(jq --exit-status --raw-output --arg hash "${manual_hash}" \
 qbit_post torrents/addTags "hashes=${manual_hash}" 'tags=qcontrol-resume'
 
 marker_status="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/QControl/Status")"
 jq --exit-status \
     '((.protectionState // .ProtectionState) | ascii_downcase) == "inactive"
@@ -320,7 +320,7 @@ jq --exit-status \
 
 manual_recovery="$(curl --fail --silent --show-error \
     --request POST \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/QControl/Recovery/ResumeMarkedTorrents")"
 jq --exit-status \
     '((.outcome // .Outcome) | ascii_downcase) == "completed"' \

@@ -39,7 +39,7 @@ async function authenticateApi(request, deviceId) {
 
 async function readStatus(request, token) {
     const response = await request.get('/QControl/Status', {
-        headers: { 'X-Emby-Token': token }
+        headers: { Authorization: `MediaBrowser Token="${token}"` }
     });
     expect(response.ok()).toBeTruthy();
     return response.json();
@@ -143,7 +143,7 @@ test('manual recovery is inert until its native confirmation is accepted', async
 test('real Jellyfin web player drives paused protection and normal release', async ({ page, request }) => {
     const apiToken = await authenticateApi(request, 'qcontrol-browser-status');
     const itemsResponse = await request.get('/Items?Recursive=true&IncludeItemTypes=Movie', {
-        headers: { 'X-Emby-Token': apiToken }
+        headers: { Authorization: `MediaBrowser Token="${apiToken}"` }
     });
     expect(itemsResponse.ok()).toBeTruthy();
     const movie = (await itemsResponse.json()).Items[0];

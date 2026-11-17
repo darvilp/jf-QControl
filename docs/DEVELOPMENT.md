@@ -1,6 +1,6 @@
 # Local development
 
-QControl targets .NET 9 and Jellyfin 10.11.11. The repository-local wrapper
+QControl targets .NET 10 and Jellyfin 12.0.0. The repository-local wrapper
 keeps disposable .NET and NuGet state below ignored `.testenv/` paths.
 
 ## Build and test
@@ -150,7 +150,7 @@ loopback 18196/18180
           ▼
 HTTP-only gateway
           │ internal network
-          ├── Jellyfin 10.11.11
+          ├── Jellyfin 12.0
           ├── qBittorrent 5.2.3
           └── local HTTP web seed
 ```

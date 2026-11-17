@@ -67,6 +67,10 @@ done
 test_server_version="$(sed -n \
     's|^[[:space:]]*image:[[:space:]]*jellyfin/jellyfin:\([^@[:space:]]*\).*|\1|p' \
     "${project_root}/compose.yaml")"
+# Jellyfin 12 uses two-component release/image tags and three-component packages.
+if [[ "${test_server_version}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    test_server_version="${test_server_version}.0"
+fi
 [[ "${test_server_version}" == "${jellyfin_package_version}" ]] \
     || fail "Test server ${test_server_version:-<missing>} does not match target ABI server version ${jellyfin_package_version}."
 

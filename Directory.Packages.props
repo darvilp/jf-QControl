@@ -4,9 +4,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="Jellyfin.Common" Version="10.11.11" />
-    <PackageVersion Include="Jellyfin.Controller" Version="10.11.11" />
-    <PackageVersion Include="Jellyfin.Model" Version="10.11.11" />
+    <PackageVersion Include="Jellyfin.Common" Version="12.0.0" />
+    <PackageVersion Include="Jellyfin.Controller" Version="12.0.0" />
+    <PackageVersion Include="Jellyfin.Model" Version="12.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="SerilogAnalyzer" Version="0.15.0" />

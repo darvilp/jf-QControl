@@ -5,7 +5,7 @@ while Jellyfin media is open in a player. It can independently enable
 qBittorrent Alternative Limits and stop administrator-selected torrents, then
 restore the controlled state after a configurable grace period.
 
-The repository currently contains the loadable Jellyfin 10.11 plugin,
+The repository currently contains the Jellyfin 12 migration,
 package tooling, isolated Jellyfin/qBittorrent compatibility fixtures,
 journaled Stop Torrents and Alternative Limits action slices, and the hosted
 Jellyfin playback coordinator. Administrator-only server APIs now validate and
@@ -15,7 +15,13 @@ those contracts through native, responsive Jellyfin controls without reading
 stored credential content. A new installation remains deliberately inert until
 a connection test succeeds and an action is enabled.
 
-## Install the alpha
+The Jellyfin 10.11 / .NET 9 source is preserved in
+[`legacy/jellyfin-10.11`](https://github.com/darvilp/jf-QControl/tree/legacy/jellyfin-10.11).
+This branch targets Jellyfin packages `12.0.0`, ABI `12.0.0.0`, and .NET 10.
+Cloud installation and API-driven protection smoke tests passed. See the
+[migration evidence and remaining checklist](docs/compatibility/jellyfin-12.md).
+
+## Install the published 10.11 alpha
 
 In **Dashboard > Plugins > Repositories**, add a repository named `QControl`
 with this URL:
@@ -32,7 +38,7 @@ forward-compatible upgrades begin with the first non-alpha release.
 
 ## V1 direction
 
-- Jellyfin 10.11 plugin running in-process with the server.
+- Jellyfin 12 plugin running in-process with the server.
 - One qBittorrent 5.2+ Web API endpoint.
 - Explicit authentication using a stored API key, a secret-file key, or
   qBittorrent's preconfigured localhost/trusted-subnet bypass.

@@ -43,7 +43,7 @@ report_start() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"CanSeek\":true,\"ItemId\":\"${movie_id}\",\"IsPaused\":false,\"IsMuted\":false,\"PositionTicks\":0,\"PlayMethod\":\"DirectPlay\",\"PlaySessionId\":\"${play_session_id}\"}" \
         "${server_url}/Sessions/Playing"
@@ -56,7 +56,7 @@ report_progress() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"CanSeek\":true,\"ItemId\":\"${movie_id}\",\"IsPaused\":${paused},\"IsMuted\":false,\"PositionTicks\":10000000,\"PlayMethod\":\"DirectPlay\",\"PlaySessionId\":\"${play_session_id}\"}" \
         "${server_url}/Sessions/Playing/Progress"
@@ -68,7 +68,7 @@ report_stop() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"ItemId\":\"${movie_id}\",\"PositionTicks\":10000000,\"PlaySessionId\":\"${play_session_id}\",\"Failed\":false}" \
         "${server_url}/Sessions/Playing/Stopped"
@@ -81,7 +81,7 @@ artifact_path="$("${project_root}/scripts/package.sh" | tail -n 1)"
 "${install_script}" "${artifact_path}"
 admin_token="$(<"${project_root}/.testenv/jellyfin/access-token")"
 items="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/Items?Recursive=true&IncludeItemTypes=Movie")"
 movie_id="$(jq --exit-status --raw-output '.Items[0].Id' <<<"${items}")"
 
@@ -97,7 +97,7 @@ report_start "${token_b}" "${play_b}"
 report_progress "${token_b}" "${play_b}" true
 
 sessions="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/Sessions")"
 jq --exit-status \
     --arg first "${device_a}" \
@@ -109,7 +109,7 @@ jq --exit-status \
 
 report_stop "${token_a}" "${play_a}"
 sessions="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/Sessions")"
 jq --exit-status \
     --arg first "${device_a}" \
@@ -122,11 +122,11 @@ report_stop "${token_b}" "${play_b}"
 curl --fail --silent --show-error \
     --output /dev/null \
     --request POST \
-    --header "X-Emby-Token: ${token_b}" \
+    --header "Authorization: MediaBrowser Token=\"${token_b}\"" \
     "${server_url}/Sessions/Logout"
 
 sessions="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     "${server_url}/Sessions")"
 jq --exit-status \
     --arg second "${device_b}" \

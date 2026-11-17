@@ -52,7 +52,7 @@ jobs:
           printf '%s\n' "${source_commit}" >release-bundle/source-commit.txt
           printf 'commit=%s\n' "${source_commit}" >>"${GITHUB_OUTPUT}"
 
-      - name: Set up .NET 9
+      - name: Set up .NET 10
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
@@ -66,15 +66,15 @@ jobs:
       - name: Test
         run: |
           dotnet test Jellyfin.Plugin.QControl.sln --configuration Release --no-build --no-restore --verbosity normal
-          node --check --experimental-default-type=module Jellyfin.Plugin.QControl/Configuration/configPage.js
-          node --test --experimental-default-type=module tests/ui/configPage.test.js
+          node --check Jellyfin.Plugin.QControl/Configuration/configPage.js
+          node --test tests/ui/configPage.test.js
           tests/release/release-tooling.test.sh
 
       - name: Build plugin package
         id: package
         uses: oddstr13/jellyfin-plugin-repository-manager@9497a0a499416cc572ed2e07a391d9f943a37b4d # v1.1.1
         with:
-          dotnet-target: net9.0
+          dotnet-target: net10.0
 
       - name: Prepare immutable candidate assets
         id: assets

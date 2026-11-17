@@ -52,7 +52,7 @@ report_start() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"CanSeek\":true,\"ItemId\":\"${movie_id}\",\"IsPaused\":true,\"PositionTicks\":0,\"PlayMethod\":\"DirectPlay\",\"PlaySessionId\":\"${play_id}\"}" \
         "${server_url}/Sessions/Playing"
@@ -64,7 +64,7 @@ report_stop() {
     curl --fail --silent --show-error \
         --output /dev/null \
         --request POST \
-        --header "X-Emby-Token: ${token}" \
+        --header "Authorization: MediaBrowser Token=\"${token}\"" \
         --header 'Content-Type: application/json' \
         --data "{\"ItemId\":\"${movie_id}\",\"PositionTicks\":10000000,\"PlaySessionId\":\"${play_id}\",\"Failed\":false}" \
         "${server_url}/Sessions/Playing/Stopped"
@@ -80,7 +80,7 @@ qbit_get() {
 admin_get() {
     local endpoint="$1"
     curl --fail --silent --show-error \
-        --header "X-Emby-Token: ${admin_token}" \
+        --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
         "${server_url}/${endpoint}"
 }
 
@@ -88,7 +88,7 @@ admin_post() {
     local endpoint="$1"
     curl --fail --silent --show-error \
         --request POST \
-        --header "X-Emby-Token: ${admin_token}" \
+        --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
         "${server_url}/${endpoint}"
 }
 
@@ -165,14 +165,14 @@ candidate="$(jq --null-input \
     '{expectedRevision:0,qbittorrentBaseAddress:"http://qbittorrent:18180",credentialMode:1,secretFilePath:"/run/secrets/qbittorrent-api-key",apiKeyReplacement:"",clearStoredApiKey:false,alternativeLimitsEnabled:true,stopTorrentsEnabled:true,stopScope:0,selectedCategories:[],includeIncomplete:true,includeCompleted:true,markerTag:"qcontrol-resume",exclusionTags:["qcontrol-ignore"],releaseGraceSeconds:5}')"
 curl --fail --silent --show-error \
     --request POST \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${candidate}" \
     "${server_url}/QControl/Connection/Test" \
     | jq --exit-status '(.isConnected // .IsConnected) == true' >/dev/null
 curl --fail --silent --show-error \
     --request PUT \
-    --header "X-Emby-Token: ${admin_token}" \
+    --header "Authorization: MediaBrowser Token=\"${admin_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${candidate}" \
     "${server_url}/QControl/Configuration" \
