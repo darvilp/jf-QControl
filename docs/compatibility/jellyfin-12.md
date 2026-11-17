@@ -75,7 +75,62 @@ fixture state for 12; retain any 10.11 configuration/data backup separately.
 6. Record server version, image digest, commands, results, and logs in this
    document. Check a later 12.x server separately before claiming that range.
 
-Runtime/server, browser E2E, real qBittorrent mutation, interruption/outage,
-and temporary-manifest installation tests were not run in the cloud migration.
+The initial migration did not run runtime tests. The cloud follow-up below
+records the subsequent smoke tests. Browser E2E, interruption/outage, and
+temporary-manifest installation remain separate checks.
 Review these results before merging. Release tagging, publication, catalog
 updates, and deployment are separate maintainer actions.
+
+## Disposable cloud runtime follow-up
+
+On 2026-11-17, the same migration was rebuilt successfully with zero warnings
+and errors, then installed in the pinned Jellyfin 12.0.0 Docker image. The
+original migration CI run also passed:
+[GitHub Actions 44026251172](https://github.com/darvilp/jf-QControl/actions/runs/44026251172).
+
+The first authenticated setup request exposed a fixture migration defect.
+Login succeeded, but requests with `X-Emby-Token` returned HTTP 401. The fixture
+scripts and browser API helpers now send `Authorization: MediaBrowser
+Token="..."`. The plugin dashboard itself uses Jellyfin's ApiClient.
+
+`tests/fixtures/jellyfin-compatibility.test.sh` passed after that fix. It built
+and verified the ZIP, installed it in the isolated plugin directory, restarted
+Jellyfin, and confirmed QControl `0.1.0.1` was Active with the original GUID.
+It also checked inert default configuration, saved configuration revision 1,
+restarted again, verified configuration and journal-file persistence, and
+retrieved the embedded administrator page. Server logs reported
+`Loaded plugin: QControl 0.1.0.1`; its status API returned Inactive with both
+actions disabled before configuration.
+
+The cloud needed temporary fixture adaptations, which are not production
+changes. `lscr.io` returned HTTP 403, so the test pulled
+`docker.io/linuxserver/qbittorrent` at the identical pinned digest. Injected
+proxy settings were cleared inside the four fixture containers, and wget
+health checks used `-Y off`. Synthetic webseed directories and files received
+755/644 permissions so nginx could serve them. These changes did not affect
+secrets or live data. The normal compose file was restored after testing.
+
+An initial standalone Jellyfin attempt was healthy inside its container but
+unreachable through a published port on the internal-only network. Testing
+then used the repository's normal gateway and isolated network layout.
+External plugin-catalog requests failed on that deliberately isolated network;
+local plugin installation did not depend on the external catalog.
+
+`tests/fixtures/jellyfin-qcontrol-contract.test.sh` also passed against real
+Jellyfin 12.0.0 and qBittorrent 5.2.3. It verified unauthenticated HTTP 401 and
+non-administrator HTTP 403 responses, connection validation including trusted
+subnet bypass and secret-file credentials, configuration and category APIs,
+and credential-free responses and journaling. Synthetic playback reports
+activated both Alternative Limits and selected-torrent stops. Stopping
+playback restored the original limits and torrent state without changing
+categories. Explicit marked-torrent recovery also completed successfully.
+
+Both runtime test scripts removed their fixture containers and networks on
+exit. No live server, live torrent, published release, or catalog was touched.
+ShellCheck, browser-test JavaScript syntax, and diff whitespace checks passed
+after the authorization fix. No runtime smoke failures remain unresolved.
+
+This is a server/API smoke test, not a real-player or browser E2E result.
+Real-player pause/disconnect behavior, interruption/outage recovery,
+temporary-manifest catalog installation, upgrades from an existing 10.11
+configuration, and later 12.x releases remain untested in this follow-up.

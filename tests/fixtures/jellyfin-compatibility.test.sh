@@ -44,7 +44,7 @@ artifact_path="$("${project_root}/scripts/package.sh" | tail -n 1)"
 
 access_token="$(<"${token_file}")"
 plugins="$(curl --fail --silent \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/Plugins")"
 jq --exit-status \
     --arg id "${plugin_id}" \
@@ -52,7 +52,7 @@ jq --exit-status \
     <<<"${plugins}" >/dev/null
 
 configuration="$(curl --fail --silent \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/QControl/Configuration")"
 jq --exit-status \
     '(.Revision // .revision) == 0
@@ -62,7 +62,7 @@ jq --exit-status \
 
 save_result="$(curl --fail --silent --show-error \
     --request PUT \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --header 'Content-Type: application/json' \
     --data '{"ExpectedRevision":0}' \
     "${server_url}/QControl/Configuration")"
@@ -100,7 +100,7 @@ find "${configuration_root}" \
     -delete
 
 configuration="$(curl --fail --silent \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/QControl/Configuration")"
 jq --exit-status \
     '(.Revision // .revision) == 1
@@ -109,7 +109,7 @@ jq --exit-status \
     <<<"${configuration}" >/dev/null
 
 page="$(curl --fail --silent --get \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --data-urlencode 'name=QControl' \
     "${server_url}/web/ConfigurationPage")"
 if [[ "${page}" != *'id="qControlPage"'* \

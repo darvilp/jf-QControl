@@ -34,7 +34,7 @@ artifact_path="$("${project_root}/scripts/package.sh" | tail -n 1)"
 
 access_token="$(<"${token_file}")"
 configuration_page="$(curl --fail --silent --show-error --get \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --data-urlencode 'name=QControl' \
     "${server_url}/web/ConfigurationPage")"
 for required in \
@@ -57,7 +57,7 @@ if grep --ignore-case --quiet 'value="qbt_' <<<"${configuration_page}"; then
 fi
 
 controller="$(curl --fail --silent --show-error --get \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --data-urlencode 'name=QControl.js' \
     "${server_url}/web/ConfigurationPage")"
 for required in \
@@ -74,10 +74,10 @@ for required in \
 done
 
 safe_configuration="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/QControl/Configuration")"
 status="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/QControl/Status")"
 jq --exit-status \
     'has("Revision") or has("revision")' <<<"${safe_configuration}" >/dev/null

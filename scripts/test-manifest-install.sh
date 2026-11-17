@@ -32,7 +32,7 @@ cleanup() {
     set +e
     if [[ -n "${original_repositories}" && -n "${access_token}" ]]; then
         curl --silent --request POST \
-            --header "X-Emby-Token: ${access_token}" \
+            --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
             --header 'Content-Type: application/json' \
             --data "${original_repositories}" \
             "${server_url}/Repositories" >/dev/null
@@ -75,20 +75,20 @@ find "${manifest_dir}" -mindepth 1 -delete
 
 compose exec -T jellyfin curl --fail --silent "${manifest_url}" >/dev/null
 original_repositories="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/Repositories")"
 temporary_repository="$(jq --arg url "${manifest_url}" \
     '[{"Name":"QControl Temporary","Url":$url,"Enabled":true}]' \
     <<<"${original_repositories}")"
 curl --fail --silent --show-error \
     --request POST \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${temporary_repository}" \
     "${server_url}/Repositories" >/dev/null
 
 packages="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/Packages")"
 jq --exit-status \
     --arg plugin_id "${plugin_id}" \
@@ -100,7 +100,7 @@ jq --exit-status \
     <<<"${packages}" >/dev/null
 
 plugins_before="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/Plugins")"
 if jq --exit-status \
     --arg plugin_id "${plugin_id}" \
@@ -113,7 +113,7 @@ fi
 curl --fail --silent --show-error \
     --get \
     --request POST \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --data-urlencode "assemblyGuid=${plugin_id}" \
     --data-urlencode "version=${plugin_version}" \
     --data-urlencode "repositoryUrl=${manifest_url}" \
@@ -129,7 +129,7 @@ done
 [[ "${health:-}" == 'healthy' ]]
 
 plugins="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/Plugins")"
 jq --exit-status \
     --arg plugin_id "${plugin_id}" \
@@ -143,7 +143,7 @@ jq --exit-status \
 candidate='{"expectedRevision":0,"qbittorrentBaseAddress":"","credentialMode":0,"secretFilePath":"","apiKeyReplacement":"","clearStoredApiKey":false,"alternativeLimitsEnabled":false,"stopTorrentsEnabled":false,"stopScope":0,"selectedCategories":[],"includeIncomplete":true,"includeCompleted":true,"markerTag":"manifest-resume","exclusionTags":["manifest-ignore","secondary-ignore"],"releaseGraceSeconds":60}'
 save_result="$(curl --fail --silent --show-error \
     --request PUT \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     --header 'Content-Type: application/json' \
     --data "${candidate}" \
     "${server_url}/QControl/Configuration")"
@@ -161,7 +161,7 @@ done
 [[ "${health:-}" == 'healthy' ]]
 
 retained="$(curl --fail --silent --show-error \
-    --header "X-Emby-Token: ${access_token}" \
+    --header "Authorization: MediaBrowser Token=\"${access_token}\"" \
     "${server_url}/QControl/Configuration")"
 jq --exit-status \
     '(.revision // .Revision) == 1

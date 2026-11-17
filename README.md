@@ -18,7 +18,8 @@ a connection test succeeds and an action is enabled.
 The Jellyfin 10.11 / .NET 9 source is preserved in
 [`legacy/jellyfin-10.11`](https://github.com/darvilp/jf-QControl/tree/legacy/jellyfin-10.11).
 This branch targets Jellyfin packages `12.0.0`, ABI `12.0.0.0`, and .NET 10.
-Runtime validation is pending. See the [migration checklist](docs/compatibility/jellyfin-12.md).
+Cloud installation and API-driven protection smoke tests passed. See the
+[migration evidence and remaining checklist](docs/compatibility/jellyfin-12.md).
 
 ## Install the published 10.11 alpha
 
